@@ -1,15 +1,62 @@
 package database
 
 import (
+	"errors"
 	"fmt"
+	"httpServer/logger"
 	"httpServer/models"
 	"os"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-//var DB *gorm.DB
+func seedDefaultData(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, roleName := range []string{"admin", "user"} {
+			var role models.Role
+			if err := tx.Where("name = ?", roleName).First(&role).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&models.Role{Name: roleName}).Error; err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+		}
+		var adminRole models.Role
+		if err := tx.Where("name = ?", "admin").First(&adminRole).Error; err != nil {
+			return err
+		}
+		adminEmail := os.Getenv("ADMIN_EMAIL")
+		if adminEmail == "" {
+			adminEmail = "admin@example.com"
+		}
+
+		adminPassword := os.Getenv("ADMIN_PASSWORD")
+		if adminPassword == "" {
+			adminPassword = "admin123"
+		}
+
+		var adminUser models.User
+		if err := tx.Where("username = ?", "admin").First(&adminUser).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
+			if err != nil {
+				return err
+			}
+			adminUser = models.User{
+				Username: "admin",
+				Email:    adminEmail,
+				Password: string(hashedPassword),
+				RoleID:   &adminRole.ID,
+			}
+			if err := tx.Create(&adminUser).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 
 func Connect() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable timezone=Europe/Moscow",
@@ -27,9 +74,14 @@ func Connect() (*gorm.DB, error) {
 	fmt.Println("Успешно подключено к базе данных")
 
 	err = db.AutoMigrate(models.Models()...)
+	err = seedDefaultData(db)
+	if err != nil {
+		logger.LogError(err, "Ошибка при инициализации данных", logger.Error)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Миграция базы данных выполнена успешно")
+	logger.LogError(nil, "База данных успешно мигрирована", logger.Info)
 	return db, nil
 }

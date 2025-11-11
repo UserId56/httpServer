@@ -38,3 +38,13 @@ func (test *TestController) TestCreate(c *gin.Context) {
 	}
 	c.JSON(201, gin.H{"message": "Тестовая запись создана", "test": testList})
 }
+
+func (test TestController) TestRole(c *gin.Context) {
+	var rolesList []models.Role
+	if result := test.DB.Find(&rolesList); result.Error != nil {
+		logger.LogError(result.Error, "Ошибка получения ролей", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка получения ролей"})
+		return
+	}
+	c.JSON(200, gin.H{"roles": rolesList})
+}
