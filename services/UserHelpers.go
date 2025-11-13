@@ -14,7 +14,7 @@ func GenerateJWT(user *models.User) (string, error) {
 
 	minutes, err := strconv.Atoi(configTime)
 	if err != nil || minutes <= 0 {
-		minutes = 15
+		minutes = 1
 	}
 	exp := time.Now().Add(time.Duration(minutes) * time.Minute)
 	claims := jwt.MapClaims{
@@ -39,7 +39,8 @@ func ParseJWT(tokenString string) (*jwt.Token, error) {
 			return nil, jwt.ErrTokenMalformed
 		}
 		return []byte(secretKey), nil
-	})
+	},
+		jwt.WithExpirationRequired())
 	if err != nil {
 		return nil, err
 	}

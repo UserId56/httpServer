@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -154,18 +153,9 @@ func (uc *UserController) UserLogin(c *gin.Context) {
 }
 
 func (uc *UserController) UserGetMyProfile(c *gin.Context) {
-	JWT := c.GetHeader("Authorization")
-	token, err := services.ParseJWT(JWT)
-	if err != nil || !token.Valid {
-		c.JSON(401, gin.H{"error": "Не авторизован"})
-		return
-	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		userID, ok := claims["user_id"].(float64)
-		if !ok {
-			c.JSON(401, gin.H{"error": "Не авторизован"})
-			return
-		}
+	userIDAuth, exists := c.Get("user_id")
+	if exists {
+		userID := userIDAuth.(float64)
 		var user models.User
 		if err := uc.DB.Model(&models.User{}).Select("created_at", "updated_at", "id", "username", "email", "avatar", "bio", "role_id").Where("id = ?", int(userID)).First(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(404, gin.H{"error": "Пользователь не найден"})
