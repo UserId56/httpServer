@@ -15,4 +15,5 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 	r.GET("/roles", appController.Test.TestRole)
 	r.POST("/user/register", appController.User.UserRegistration)
 	r.POST("/user/login", appController.User.UserLogin)
+	r.GET("/user/profile", appController.User.UserGetMyProfile)
 }

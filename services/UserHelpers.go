@@ -31,3 +31,17 @@ func GenerateJWT(user *models.User) (string, error) {
 	}
 	return signedToken, nil
 }
+
+func ParseJWT(tokenString string) (*jwt.Token, error) {
+	secretKey := os.Getenv("SERVER_JWT_SECRET_KEY")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrTokenMalformed
+		}
+		return []byte(secretKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
