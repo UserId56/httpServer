@@ -5,6 +5,7 @@ import (
 	"httpServer/logger"
 	"httpServer/models"
 	"httpServer/services"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -99,7 +100,7 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 	c.JSON(200, gin.H{"user": userResponse})
 }
 
-func (uc UserController) UserLogin(c *gin.Context) {
+func (uc *UserController) UserLogin(c *gin.Context) {
 	var loginInput models.UserLoginRequest
 	if err := c.ShouldBindJSON(&loginInput); err != nil {
 		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
@@ -152,7 +153,7 @@ func (uc UserController) UserLogin(c *gin.Context) {
 	c.JSON(200, gin.H{"user": userResponse})
 }
 
-func (uc UserController) UserGetMyProfile(c *gin.Context) {
+func (uc *UserController) UserGetMyProfile(c *gin.Context) {
 	JWT := c.GetHeader("Authorization")
 	token, err := services.ParseJWT(JWT)
 	if err != nil || !token.Valid {
@@ -174,4 +175,19 @@ func (uc UserController) UserGetMyProfile(c *gin.Context) {
 	} else {
 		c.JSON(401, gin.H{"error": "Не авторизован"})
 	}
+}
+
+func (uc *UserController) UserGetByID(c *gin.Context) {
+	userID := c.Param("id")
+	id, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Неверный ID пользователя"})
+		return
+	}
+	var user models.UserGetResponse
+	if err := uc.DB.Model(&models.User{}).Where("id = ?", id).First(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(404, gin.H{"error": "Пользователь не найден"})
+		return
+	}
+	c.JSON(200, gin.H{"user": user})
 }
