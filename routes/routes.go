@@ -16,8 +16,14 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 	r.POST("/user/register", appController.User.UserRegistration)
 	r.POST("/user/login", appController.User.UserLogin)
 	private := r.Group("/")
-	private.Use(middleware.Auth())
-	private.GET("/roles", appController.Test.TestRole)
-	private.GET("/user/profile", appController.User.UserGetMyProfile)
-	private.GET("/user/:id", appController.User.UserGetByID)
+	{
+		private.Use(middleware.Auth())
+		private.GET("/roles", appController.Test.TestRole)
+		user := private.Group("/user")
+		{
+			user.GET("/profile", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserGetMyProfile)
+			user.GET("/:id", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserGetByID)
+
+		}
+	}
 }
