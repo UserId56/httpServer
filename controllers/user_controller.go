@@ -182,6 +182,51 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 	c.JSON(200, gin.H{"user": user})
 }
 
+func (uc UserController) UserUpdateByID(c *gin.Context) {
+	userID := c.Param("id")
+	id, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Неверный ID пользователя"})
+		return
+	}
+	UserIDAuth, exists := c.Get("user_id")
+	floatUserIDAuth, ok := UserIDAuth.(float64)
+	if !ok {
+		logger.LogError(errors.New("Ошибка преобразования user_id"), "Ошибка преобразования user_id из JWT", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	if (!exists || uint64(floatUserIDAuth) != id) && uint64(floatUserIDAuth) != 1 {
+		c.JSON(403, gin.H{"error": "Нет прав для изменения этого пользователя"})
+		return
+	}
+	var userInput map[string]interface{}
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
+		return
+	}
+	if password, ok := userInput["password"].(string); ok {
+		hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			logger.LogError(err, "Ошибка хеширования пароля", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		userInput["password"] = string(hashPassword)
+	}
+	result := uc.DB.Model(&models.User{}).Where("id = ?", id).Updates(userInput)
+	if result.Error != nil {
+		logger.LogError(result.Error, "Ошибка обновления пользователя", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(404, gin.H{"error": "Пользователь не найден"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "Пользователь успешно обновлен"})
+}
+
 func (uc *UserController) UserDeleteByID(c *gin.Context) {
 	userID := c.Param("id")
 	id, err := strconv.ParseUint(userID, 10, 64)
