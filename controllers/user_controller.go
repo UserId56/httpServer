@@ -187,7 +187,7 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 	c.JSON(200, gin.H{"user": user})
 }
 
-func (uc UserController) UserUpdateByID(c *gin.Context) {
+func (uc *UserController) UserUpdateByID(c *gin.Context) {
 	userID := c.Param("id")
 	id, err := strconv.ParseUint(userID, 10, 64)
 	if err != nil {
