@@ -11,7 +11,7 @@ import (
 func main() {
 	DB, err := database.Connect()
 	if err != nil {
-		logger.LogError(err, "Ошибка при подключении к базе данных", logger.Error)
+		logger.Log(err, "Ошибка при подключении к базе данных", logger.Error)
 		return
 	}
 	r := gin.Default()
@@ -19,7 +19,6 @@ func main() {
 
 	err = r.Run(":3000")
 	if err != nil {
-		logger.LogError(err, "Ошибка при запуске сервера", logger.Error)
+		logger.Log(err, "Ошибка при запуске сервера", logger.Error)
 	}
-	logger.LogError(nil, "Сервер успешно запущен на порту 8080", logger.Info)
 }

@@ -19,7 +19,7 @@ func NewTestController(db *gorm.DB) *TestController {
 func (test *TestController) TestGetList(c *gin.Context) {
 	var testList []models.Test
 	if result := test.DB.Find(&testList); result.Error != nil {
-		logger.LogError(result.Error, "Ошибка получения тестовых записей", logger.Error)
+		logger.Log(result.Error, "Ошибка получения тестовых записей", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка получения тестовых записей"})
 		return
 	}
@@ -42,7 +42,7 @@ func (test *TestController) TestCreate(c *gin.Context) {
 func (test TestController) TestRole(c *gin.Context) {
 	var rolesList []models.Role
 	if result := test.DB.Find(&rolesList); result.Error != nil {
-		logger.LogError(result.Error, "Ошибка получения ролей", logger.Error)
+		logger.Log(result.Error, "Ошибка получения ролей", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка получения ролей"})
 		return
 	}

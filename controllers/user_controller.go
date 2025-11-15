@@ -30,7 +30,7 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(userInput.Password), bcrypt.DefaultCost)
 	if err != nil {
-		logger.LogError(err, "Ошибка хеширования пароля", logger.Error)
+		logger.Log(err, "Ошибка хеширования пароля", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
@@ -53,7 +53,7 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 
 	tx := uc.DB.Begin()
 	if tx.Error != nil {
-		logger.LogError(tx.Error, "Ошибка создания транзакции", logger.Error)
+		logger.Log(tx.Error, "Ошибка создания транзакции", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
@@ -64,7 +64,7 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 			tx.Rollback()
 			return
 		}
-		logger.LogError(err, "Ошибка создания пользователя", logger.Error)
+		logger.Log(err, "Ошибка создания пользователя", logger.Error)
 		tx.Rollback()
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
@@ -76,19 +76,19 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 	}
 
 	if err := tx.Create(&refreshToken).Error; err != nil {
-		logger.LogError(err, "Ошибка создания refresh токена", logger.Error)
+		logger.Log(err, "Ошибка создания refresh токена", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	if err := tx.Commit().Error; err != nil {
-		logger.LogError(err, "Ошибка коммита транзакции", logger.Error)
+		logger.Log(err, "Ошибка коммита транзакции", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 
 	jwt, err := services.GenerateJWT(&user)
 	if err != nil {
-		logger.LogError(err, "Ошибка генерации JWT", logger.Error)
+		logger.Log(err, "Ошибка генерации JWT", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
@@ -134,14 +134,14 @@ func (uc *UserController) UserLogin(c *gin.Context) {
 		Token:  uuid.NewString(),
 	}
 	if err := uc.DB.Create(&refreshToken).Error; err != nil {
-		logger.LogError(err, "Ошибка создания refresh токена", logger.Error)
+		logger.Log(err, "Ошибка создания refresh токена", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 
 	jwt, err := services.GenerateJWT(&user)
 	if err != nil {
-		logger.LogError(err, "Ошибка генерации JWT", logger.Error)
+		logger.Log(err, "Ошибка генерации JWT", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
@@ -197,7 +197,7 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 	UserIDAuth, exists := c.Get("user_id")
 	floatUserIDAuth, ok := UserIDAuth.(float64)
 	if !ok {
-		logger.LogError(errors.New("Ошибка преобразования user_id"), "Ошибка преобразования user_id из JWT", logger.Error)
+		logger.Log(errors.New("Ошибка преобразования user_id"), "Ошибка преобразования user_id из JWT", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
@@ -213,7 +213,7 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 	if password, ok := userInput["password"].(string); ok {
 		hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			logger.LogError(err, "Ошибка хеширования пароля", logger.Error)
+			logger.Log(err, "Ошибка хеширования пароля", logger.Error)
 			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 			return
 		}
@@ -221,7 +221,7 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 	}
 	result := uc.DB.Model(&models.User{}).Where("id = ?", id).Updates(userInput)
 	if result.Error != nil {
-		logger.LogError(result.Error, "Ошибка обновления пользователя", logger.Error)
+		logger.Log(result.Error, "Ошибка обновления пользователя", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
@@ -253,7 +253,7 @@ func (uc *UserController) UserDeleteByID(c *gin.Context) {
 		return
 	}
 	if err := uc.DB.Delete(&models.User{}, id).Error; err != nil {
-		logger.LogError(err, "Ошибка удаления пользователя", logger.Error)
+		logger.Log(err, "Ошибка удаления пользователя", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}

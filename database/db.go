@@ -71,17 +71,17 @@ func Connect() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Успешно подключено к базе данных")
+	logger.Log(nil, "Подключение к базе данных успешно установлено", logger.Info)
 
 	err = db.AutoMigrate(models.Models()...)
 	err = seedDefaultData(db)
 	if err != nil {
-		logger.LogError(err, "Ошибка при инициализации данных", logger.Error)
+		logger.Log(err, "Ошибка при инициализации данных", logger.Error)
 		return nil, err
 	}
 	if err != nil {
 		return nil, err
 	}
-	logger.LogError(nil, "База данных успешно мигрирована", logger.Info)
+	logger.Log(nil, "База данных успешно мигрирована", logger.Info)
 	return db, nil
 }
