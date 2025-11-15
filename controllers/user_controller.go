@@ -181,3 +181,31 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"user": user})
 }
+
+func (uc *UserController) UserDeleteByID(c *gin.Context) {
+	userID := c.Param("id")
+	id, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Неверный ID пользователя"})
+		return
+	}
+	var user models.User
+	if err := uc.DB.Model(&models.User{}).Unscoped().Where("id = ?", id).First(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(404, gin.H{"error": "Пользователь не найден"})
+		return
+	}
+	if !user.DeletedAt.Time.IsZero() {
+		if err := uc.DB.Unscoped().Delete(&models.User{}, id).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(404, gin.H{"error": "Пользователь не найден"})
+			return
+		}
+		c.JSON(201, gin.H{"message": "Пользователь успешно удален окончательно"})
+		return
+	}
+	if err := uc.DB.Delete(&models.User{}, id).Error; err != nil {
+		logger.LogError(err, "Ошибка удаления пользователя", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.JSON(201, gin.H{"message": "Пользователь успешно удален"})
+}

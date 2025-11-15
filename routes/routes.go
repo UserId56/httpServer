@@ -23,7 +23,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 		{
 			user.GET("/profile", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserGetMyProfile)
 			user.GET("/:id", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserGetByID)
-
+			user.DELETE("/:id", middleware.RequirePermission(db, []string{"user.DELETE"}), appController.User.UserDeleteByID)
 		}
 	}
 }
