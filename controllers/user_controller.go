@@ -59,11 +59,16 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 	}
 
 	if err := tx.Create(&user).Error; err != nil {
+		if errors.As(err, &gorm.ErrDuplicatedKey) {
+			c.JSON(400, gin.H{"error": "Пользователь с таким именем или email уже существует"})
+			tx.Rollback()
+			return
+		}
 		logger.LogError(err, "Ошибка создания пользователя", logger.Error)
+		tx.Rollback()
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-
 	refreshToken := models.RefreshToken{
 		Model:  gorm.Model{},
 		UserID: user.ID,
