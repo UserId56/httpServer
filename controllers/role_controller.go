@@ -99,3 +99,31 @@ func (rc RoleController) RoleUpdateByID(c *gin.Context) {
 	}
 	c.Status(201)
 }
+
+func (rc RoleController) RoleDeleteByID(c *gin.Context) {
+	strRoleId := c.Param("id")
+	intRoleId, err := strconv.Atoi(strRoleId)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Не валидный ID роли"})
+		return
+	}
+
+	var role models.Role
+	if err := rc.DB.Model(&role).Unscoped().Where("id = ?", intRoleId).First(&role).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(404, gin.H{"error": "Роль не найдена"})
+		return
+	}
+	if !role.DeletedAt.Time.IsZero() {
+		if err := rc.DB.Unscoped().Delete(&models.Role{}, intRoleId).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(404, gin.H{"error": "Роль не найдена"})
+			return
+		}
+		c.JSON(201, gin.H{"message": "Роль успешно удалена окончательно"})
+		return
+	}
+	if err := rc.DB.Delete(&models.Role{}, intRoleId).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.JSON(201, gin.H{"message": "Роль успешно удалена"})
+}
