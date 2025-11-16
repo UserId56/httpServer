@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type CreateRoleRequest struct {
 	Name       string   `json:"name"`
-	Permission []string `json:"permissions"`
+	Permission []string `json:"permission"`
 }
 
 type Role struct {
