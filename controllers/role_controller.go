@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"httpServer/models"
 	"strconv"
 
@@ -32,6 +33,30 @@ func (rc RoleController) RoleGetByID(c *gin.Context) {
 		} else {
 			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		}
+		return
+	}
+	c.JSON(200, role)
+}
+
+func (rc RoleController) RoleCreate(c *gin.Context) {
+	var roleInput models.CreateRoleRequest
+	if err := c.ShouldBindJSON(&roleInput); err != nil {
+		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
+		return
+	}
+
+	role := models.Role{
+		Model:      gorm.Model{},
+		Name:       roleInput.Name,
+		Permission: roleInput.Permission,
+	}
+
+	if err := rc.DB.Create(&role).Error; err != nil {
+		if errors.As(err, &gorm.ErrDuplicatedKey) {
+			c.JSON(400, gin.H{"error": "Роль с таким именем уже существует"})
+			return
+		}
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	c.JSON(200, role)
