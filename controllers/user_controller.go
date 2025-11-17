@@ -259,3 +259,40 @@ func (uc *UserController) UserDeleteByID(c *gin.Context) {
 	}
 	c.JSON(201, gin.H{"message": "Пользователь успешно удален"})
 }
+
+func (uc *UserController) UserQuery(c *gin.Context) {
+	take := c.DefaultQuery("take", "10")
+	skip := c.DefaultQuery("skip", "0")
+
+	takeInt, err := strconv.Atoi(take)
+	if err != nil || takeInt <= 0 {
+		c.JSON(400, gin.H{"error": "Параметр 'take' должен быть положительным целым числом"})
+		return
+	}
+	skipInt, err := strconv.Atoi(skip)
+	if err != nil || skipInt < 0 {
+		c.JSON(400, gin.H{"error": "Параметр 'skip' должен быть неотрицательным целым числом"})
+		return
+	}
+	var count int64
+	var users []models.UserGetResponse
+	err = uc.DB.Model(&models.User{}).Count(&count).Error
+	if count == 0 {
+		c.Header("X-Total-Count", "0")
+		c.JSON(200, gin.H{"users": []models.User{}})
+		return
+	}
+	if err != nil {
+		logger.Log(err, "Ошибка получения количества пользователей", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	err = uc.DB.Model(&models.User{}).Offset(skipInt).Limit(takeInt).Find(&users).Error
+	if err != nil {
+		logger.Log(err, "Ошибка получения списка пользователей", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.Header("X-Total-Count", strconv.FormatInt(count, 10))
+	c.JSON(200, gin.H{"users": users})
+}
