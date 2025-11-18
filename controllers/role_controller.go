@@ -127,3 +127,38 @@ func (rc RoleController) RoleDeleteByID(c *gin.Context) {
 	}
 	c.JSON(201, gin.H{"message": "Роль успешно удалена"})
 }
+
+func (rc RoleController) RoleQuery(c *gin.Context) {
+	take := c.DefaultQuery("take", "10")
+	skip := c.DefaultQuery("skip", "0")
+
+	takeInt, err := strconv.Atoi(take)
+	if err != nil || takeInt <= 0 {
+		c.JSON(400, gin.H{"error": "Параметр 'take' должен быть положительным целым числом"})
+		return
+	}
+	skipInt, err := strconv.Atoi(skip)
+	if err != nil || skipInt < 0 {
+		c.JSON(400, gin.H{"error": "Параметр 'skip' должен быть неотрицательным целым числом"})
+		return
+	}
+	var count int64
+	var roles []models.Role
+	err = rc.DB.Model(&models.Role{}).Count(&count).Error
+	if count == 0 {
+		c.Header("X-Total-Count", "0")
+		c.JSON(200, gin.H{"roles": []models.Role{}})
+		return
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	err = rc.DB.Model(&models.Role{}).Limit(takeInt).Offset(skipInt).Find(&roles).Error
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.Header("X-Total-Count", strconv.FormatInt(count, 10))
+	c.JSON(200, gin.H{"roles": roles})
+}
