@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func GenerateCreateTableSQL(req models.CreateTableRequest) (string, bool, error) {
+func GenerateCreateTableSQL(req models.CreateSchemeRequest) (string, bool, error) {
 	cols := []string{
 		"id SERIAL PRIMARY KEY",
 	}

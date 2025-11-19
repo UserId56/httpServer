@@ -13,13 +13,13 @@ type ColumnDefinition struct {
 	ValidationRules datatypes.JSON `json:"validation_rules,omitempty"`
 }
 
-type CreateTableRequest struct {
+type CreateSchemeRequest struct {
 	Name        string             `json:"table_name" binding:"required,alphanum,max=64"`
 	DisplayName string             `json:"display_name" binding:"required,min=2,max=128"`
 	Columns     []ColumnDefinition `json:"columns" binding:"required,min=1"`
 }
 
-func (ctr *CreateTableRequest) CreateDynamicTable() *DynamicTable {
+func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 	var columns []*DynamicColumns
 	for _, colDef := range ctr.Columns {
 		column := &DynamicColumns{
@@ -32,7 +32,7 @@ func (ctr *CreateTableRequest) CreateDynamicTable() *DynamicTable {
 		}
 		columns = append(columns, column)
 	}
-	return &DynamicTable{
+	return &DynamicScheme{
 		Name:        ctr.Name,
 		DisplayName: ctr.DisplayName,
 		Columns:     columns,

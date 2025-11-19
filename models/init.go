@@ -6,7 +6,7 @@ func Models() []interface{} {
 		&Role{},
 		&User{},
 		&RefreshToken{},
+		&DynamicScheme{},
 		&DynamicColumns{},
-		&DynamicTable{},
 	}
 }
