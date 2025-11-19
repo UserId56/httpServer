@@ -54,6 +54,28 @@ func seedDefaultData(db *gorm.DB) error {
 				return err
 			}
 		}
+		var usersScheme models.DynamicScheme
+		if err := tx.Where("name = ?", "users").First(&usersScheme).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+
+			usersScheme = models.DynamicScheme{
+				Name:        "users",
+				DisplayName: "Пользователи",
+			}
+			if err := tx.Create(&usersScheme).Error; err != nil {
+				return err
+			}
+		}
+		var rolesScheme models.DynamicScheme
+		if err := tx.Where("name = ?", "roles").First(&rolesScheme).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+
+			rolesScheme = models.DynamicScheme{
+				Name:        "roles",
+				DisplayName: "Роли",
+			}
+			if err := tx.Create(&rolesScheme).Error; err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
