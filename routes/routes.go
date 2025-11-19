@@ -36,5 +36,10 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			role.DELETE("/:id", middleware.RequirePermission(db, []string{"role.DELETE"}), appController.Role.RoleDeleteByID)
 			role.GET("/query", middleware.RequirePermission(db, []string{"role.GET"}), appController.Role.RoleQuery)
 		}
+		//	SHEME METHODS
+		sheme := private.Group("/sheme")
+		{
+			sheme.POST("/", middleware.RequirePermission(db, []string{"sheme.POST"}), appController.Sheme.CreateDynamicTable)
+		}
 	}
 }
