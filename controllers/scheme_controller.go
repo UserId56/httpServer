@@ -6,6 +6,7 @@ import (
 	"httpServer/logger"
 	"httpServer/models"
 	"httpServer/services"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -111,4 +112,27 @@ func (tc *SchemeController) SchemeGetByName(c *gin.Context) {
 		return
 	}
 	c.JSON(200, scheme)
+}
+
+func (tc *SchemeController) SchemeGetLst(c *gin.Context) {
+	take := c.DefaultQuery("take", "10")
+	skip := c.DefaultQuery("skip", "0")
+
+	takeInt, err := strconv.Atoi(take)
+	if err != nil || takeInt <= 0 {
+		c.JSON(400, gin.H{"error": "Параметр 'take' должен быть положительным целым числом"})
+		return
+	}
+	skipInt, err := strconv.Atoi(skip)
+	if err != nil || skipInt < 0 {
+		c.JSON(400, gin.H{"error": "Параметр 'skip' должен быть неотрицательным целым числом"})
+		return
+	}
+	var schemes []models.DynamicScheme
+	if err := tc.DB.Limit(takeInt).Offset(skipInt).Find(&schemes).Error; err != nil {
+		logger.Log(err, "Ошибка получения списка таблиц", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.JSON(200, schemes)
 }
