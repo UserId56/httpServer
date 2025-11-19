@@ -40,6 +40,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 		scheme := private.Group("/scheme")
 		{
 			scheme.POST("/", middleware.RequirePermission(db, []string{"scheme.POST"}), appController.Sheme.SchemeCreate)
+			scheme.GET("/:name", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Sheme.SchemeGetByName)
 			scheme.DELETE("/:name", middleware.RequirePermission(db, []string{"scheme.DELETE"}), appController.Sheme.SchemeDelete)
 		}
 	}
