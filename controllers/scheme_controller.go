@@ -97,3 +97,18 @@ func (tc *SchemeController) SchemeDelete(c *gin.Context) {
 	tx.Commit()
 	c.Status(201)
 }
+
+func (tc *SchemeController) SchemeGetByName(c *gin.Context) {
+	schemeName := c.Param("name")
+	var scheme models.DynamicScheme
+	if err := tc.DB.Preload("Columns").Where("name = ?", schemeName).First(&scheme).Error; err != nil {
+		if errors.As(err, &gorm.ErrRecordNotFound) {
+			c.JSON(404, gin.H{"error": "Таблица не найдена"})
+			return
+		}
+		logger.Log(err, "Ошибка поиска таблицы", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.JSON(200, scheme)
+}
