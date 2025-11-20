@@ -42,6 +42,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			scheme.POST("/", middleware.RequirePermission(db, []string{"scheme.POST"}), appController.Sheme.SchemeCreate)
 			scheme.GET("/:name", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Sheme.SchemeGetByName)
 			scheme.GET("/", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Sheme.SchemeGetLst)
+			scheme.PUT("/:name", middleware.RequirePermission(db, []string{"scheme.PUT"}), appController.Sheme.SchemeUpdateByName)
 			scheme.DELETE("/:name", middleware.RequirePermission(db, []string{"scheme.DELETE"}), appController.Sheme.SchemeDelete)
 		}
 	}

@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"httpServer/logger"
 	"httpServer/models"
+	"log"
 	"os"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 func seedDefaultData(db *gorm.DB) error {
@@ -89,7 +92,17 @@ func Connect() (*gorm.DB, error) {
 		os.Getenv("SERVER_DB_PORT"),     // порт_pg (по умолчанию 5432)
 	)
 	fmt.Println(dsn)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	newLogger := gormLogger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // Выводим в stdout
+		gormLogger.Config{
+			SlowThreshold: time.Millisecond,
+			LogLevel:      gormLogger.Info, // <--- Установите Level на Info
+			Colorful:      true,
+		},
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: newLogger,
+	})
 	if err != nil {
 		return nil, err
 	}
