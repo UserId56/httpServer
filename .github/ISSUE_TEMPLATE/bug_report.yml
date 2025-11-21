@@ -1,0 +1,59 @@
+name: Bug Report
+description: Сообщить об ошибке, которая мешает работе или нарушает функционал.
+title: "[BUG]: Краткое описание проблемы"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за то, что нашли время сообщить об ошибке! Пожалуйста, предоставьте как можно больше деталей, чтобы мы могли быстро ее воспроизвести.
+
+  - type: checkboxes
+    id: pre-check
+    attributes:
+      label: Проверка перед отправкой
+      options:
+        - label: Я поискал среди существующих проблем (Issues) и не нашел дубликата.
+          required: true
+        - label: Я использую последнюю стабильную версию программы/сервиса.
+          required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Шаги для воспроизведения
+      description: Четкий и полный список шагов, которые приводят к ошибке.
+      placeholder: |
+        1. Перейти на страницу [URL]
+        2. Ввести в поле "Имя" 'Test User'
+        3. Нажать на кнопку "Отправить"
+        4. ... (описать, что произошло)
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Ожидаемое поведение
+      description: Что должно было произойти?
+      placeholder: Данные должны были сохраниться, а пользователь должен был увидеть сообщение "Успешно".
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Фактическое поведение
+      description: Что произошло на самом деле? Включите все сообщения об ошибках или неожиданные результаты.
+      placeholder: Приложение зависло, а в консоли появилась ошибка 500.
+    validations:
+      required: true
+
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи или Скриншоты (при необходимости)
+      description: Прикрепите скриншот, видео или скопируйте сообщения об ошибках из консоли разработчика.
+      render: shell
