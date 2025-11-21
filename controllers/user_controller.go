@@ -245,7 +245,7 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "Пользователь не найден"})
 		return
 	}
-	c.JSON(200, gin.H{"message": "Пользователь успешно обновлен"})
+	c.Status(200)
 }
 
 func (uc *UserController) UserDeleteByID(c *gin.Context) {
