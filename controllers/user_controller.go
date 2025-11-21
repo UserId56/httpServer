@@ -226,6 +226,11 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
 		return
 	}
+	err = services.ValidationFields(userInput)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
 	if password, ok := userInput["password"].(string); ok {
 		hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
