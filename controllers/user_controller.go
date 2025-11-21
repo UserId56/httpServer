@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -57,12 +58,27 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-
+	var pgErr *pgconn.PgError
 	if err := tx.Create(&user).Error; err != nil {
-		if errors.As(err, &gorm.ErrDuplicatedKey) {
-			c.JSON(400, gin.H{"error": "Пользователь с таким именем или email уже существует"})
-			tx.Rollback()
-			return
+		if errors.As(err, &pgErr) {
+			switch pgErr.ConstraintName {
+			case "fk_users_role":
+				c.JSON(400, gin.H{"error": "Указанная роль не существует"})
+				tx.Rollback()
+				return
+			case "uni_users_username", "uni_users_email":
+				// Пользователь с таким email или username уже существует
+				c.JSON(400, gin.H{"error": "Пользователь с таким именем или email уже существует"})
+				tx.Rollback()
+				return
+			default:
+				// Неизвестная ошибка базы данных
+				logger.Log(err, "Ошибка создания пользователя", logger.Error)
+				tx.Rollback()
+				c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+				return
+
+			}
 		}
 		logger.Log(err, "Ошибка создания пользователя", logger.Error)
 		tx.Rollback()
