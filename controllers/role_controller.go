@@ -95,7 +95,7 @@ func (rc RoleController) RoleUpdateByID(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	c.Status(201)
+	c.Status(200)
 }
 
 func (rc RoleController) RoleDeleteByID(c *gin.Context) {

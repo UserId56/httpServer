@@ -27,8 +27,9 @@ func Auth(db *gorm.DB) gin.HandlerFunc {
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		userId := claims["user_id"].(float64)
+		roleId := claims["role_id"].(float64)
 		var userExists int64
-		db.Model(&models.User{}).Where("id = ?", userId).Count(&userExists)
+		db.Model(&models.User{}).Where("id = ? AND role_id = ?", userId, roleId).Count(&userExists)
 		if userExists == 0 {
 			c.JSON(401, gin.H{"error": "Неавторизованный пользователь"})
 			c.Abort()
