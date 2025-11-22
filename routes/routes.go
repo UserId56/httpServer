@@ -17,7 +17,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 	r.POST("/user/login", appController.User.UserLogin)
 	private := r.Group("/")
 	{
-		private.Use(middleware.Auth())
+		private.Use(middleware.Auth(db))
 		//USER METHODS
 		user := private.Group("/user")
 		{

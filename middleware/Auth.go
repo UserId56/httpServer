@@ -1,14 +1,16 @@
 package middleware
 
 import (
+	"httpServer/models"
 	"httpServer/services"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
-func Auth() gin.HandlerFunc {
+func Auth(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		Authorization := c.GetHeader("Authorization")
 		if Authorization == "" {
@@ -24,6 +26,14 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
+		userId := claims["user_id"].(float64)
+		var userExists int64
+		db.Model(&models.User{}).Where("id = ?", userId).Count(&userExists)
+		if userExists == 0 {
+			c.JSON(401, gin.H{"error": "Неавторизованный пользователь"})
+			c.Abort()
+			return
+		}
 		c.Set("user_id", claims["user_id"])
 		c.Set("role_id", claims["role_id"])
 		c.Next()
