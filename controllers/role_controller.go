@@ -1,11 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"httpServer/models"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -70,27 +73,22 @@ func (rc RoleController) RoleUpdateByID(c *gin.Context) {
 		return
 	}
 
-	var roleInput models.CreateRoleRequest
+	var roleInput map[string]interface{}
 	if err := c.ShouldBindJSON(&roleInput); err != nil {
 		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
 		return
 	}
-
-	var role models.Role
-	result := rc.DB.First(&role, intRoleId)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			c.JSON(404, gin.H{"error": "Роль не найдена"})
-		} else {
-			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+	if permission, ok := roleInput["permission"]; ok {
+		b, err := json.Marshal(permission)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Некорректный формат permission"})
+			return
 		}
-		return
+		roleInput["permission"] = datatypes.JSON(b)
 	}
-
-	role.Name = roleInput.Name
-	role.Permission = roleInput.Permission
-	if err := rc.DB.Save(&role).Error; err != nil {
-		if errors.As(err, &gorm.ErrDuplicatedKey) {
+	var pgErr *pgconn.PgError
+	if err := rc.DB.Model(&models.Role{}).Where("id = ?", intRoleId).Updates(roleInput).Error; err != nil {
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			c.JSON(400, gin.H{"error": "Роль с таким именем уже существует"})
 			return
 		}
