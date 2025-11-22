@@ -240,8 +240,29 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 		}
 		userInput["password"] = string(hashPassword)
 	}
+	var pgErr *pgconn.PgError
 	result := uc.DB.Model(&models.User{}).Where("id = ?", id).Updates(userInput)
 	if result.Error != nil {
+		if errors.As(result.Error, &pgErr) {
+			switch pgErr.ConstraintName {
+			case "fk_users_role":
+				c.JSON(400, gin.H{"error": "Указанная роль не существует"})
+				return
+			case "uni_users_username":
+				// Пользователь с таким username уже существует
+				c.JSON(400, gin.H{"error": "Пользователь с таким именем уже существует"})
+				return
+			case "uni_users_email":
+				// Пользователь с таким email уже существует
+				c.JSON(400, gin.H{"error": "Пользователь с таким email уже существует"})
+				return
+			default:
+				// Неизвестная ошибка базы данных
+				logger.Log(result.Error, "Ошибка обновления пользователя", logger.Error)
+				c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+				return
+			}
+		}
 		logger.Log(result.Error, "Ошибка обновления пользователя", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
