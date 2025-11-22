@@ -299,7 +299,7 @@ func (uc *UserController) UserDeleteByID(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	c.JSON(201, gin.H{"message": "Пользователь успешно удален"})
+	c.Status(200)
 }
 
 func (uc *UserController) UserQuery(c *gin.Context) {
