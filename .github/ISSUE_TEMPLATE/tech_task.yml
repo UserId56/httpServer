@@ -27,7 +27,7 @@ body:
     id: estimation
     attributes:
       label: Оценка времени (в часах или днях)
-      description: Предварительная оценка сложности. Например: 4h, 1d, 3d.
+      description: Предварительная оценка времени, необходимого для выполнения задачи.
       placeholder: "4h"
     validations:
       required: false
@@ -36,7 +36,7 @@ body:
     id: depends-on
     attributes:
       label: Зависимости (Depends On)
-      description: Если задача зависит от других Issues или PR, укажите их здесь (например: #123, #456).
+      description: Ссылки на другие задачи или PR, от которых зависит выполнение этой задачи.
       placeholder: "#123"
     validations:
       required: false
