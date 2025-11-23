@@ -4,6 +4,7 @@ import (
 	"errors"
 	"httpServer/models"
 	"slices"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -32,8 +33,9 @@ func RequirePermission(db *gorm.DB, permission []string) gin.HandlerFunc {
 		for _, perm := range permission {
 			valid = valid && slices.Contains(role.Permission, perm)
 		}
+		permissionString := strings.Join(permission, ", ")
 		if !valid {
-			c.JSON(403, gin.H{"error": "Недостаточно прав для выполнения этого действия"})
+			c.JSON(403, gin.H{"error": "Необходимы права: " + permissionString + " или права Администратора"})
 			c.Abort()
 			return
 		}
