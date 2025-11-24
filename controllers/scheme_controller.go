@@ -161,6 +161,8 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
 		return
 	}
+	req.ID = scheme.ID
+	req.Name = schemeName
 	tx := tc.DB.Begin()
 	if tx.Error != nil {
 		logger.Log(tx.Error, "Ошибка создания транзакции", logger.Error)
