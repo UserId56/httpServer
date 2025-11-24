@@ -41,9 +41,14 @@ func (tc *SchemeController) SchemeCreate(c *gin.Context) {
 		tx.Rollback()
 		return
 	}
-	SqlQuery, dev, _ := services.GenerateCreateTableSQL(req, false)
+	SqlQuery, dev, err := services.GenerateCreateTableSQL(req, false)
 	if dev {
 		fmt.Printf(SqlQuery)
+		return
+	}
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
+		tx.Rollback()
 		return
 	}
 	if err := tx.Exec(SqlQuery).Error; err != nil {
@@ -169,7 +174,7 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 		sqlStr, newColumns, deleteColumns, err := services.GenerateUpdateTableSQL(req.Columns, scheme)
 		if err != nil {
 			logger.Log(err, "Ошибка генерации SQL для обновления таблицы", logger.Error)
-			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
 			tx.Rollback()
 			return
 		}
