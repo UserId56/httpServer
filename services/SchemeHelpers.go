@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"httpServer/models"
+	"strconv"
 	"strings"
 
 	"gorm.io/gorm"
@@ -52,9 +53,13 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						case "TEXT", "TIMESTAMP", "DATE", "JSON":
 							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT '%s', ", column.ColumnName, column.DefaultValue)
 						case "INT", "BIGINT", "BOOLEAN", "ref":
-							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT %s, ", column.ColumnName, column.DefaultValue)
+							isInt, err := strconv.ParseInt(column.DefaultValue, 10, 64)
+							if err != nil {
+								return "", nil, nil, fmt.Errorf("не верный тип данных DEFAULT для типа %s: %s", column.DataType, column.DefaultValue)
+							}
+							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT %d, ", column.ColumnName, isInt)
 						default:
-							return "", nil, nil, fmt.Errorf("Не верный тип данных %s", column.DataType)
+							return "", nil, nil, fmt.Errorf("не верный тип данных %s", column.DataType)
 						}
 					} else {
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP DEFAULT, ", column.ColumnName)
@@ -87,7 +92,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						isUpdate = true
 						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (ID) ON DELETE SET NULL NOT VALID, ", fmt.Sprintf("fk_%s_%s", currentScheme.Name, column.ReferencedScheme), column.ColumnName, column.ReferencedScheme)
 					} else {
-						return "", nil, nil, fmt.Errorf("Пустая ссылка на коллекцию")
+						return "", nil, nil, fmt.Errorf("пустая ссылка на коллекцию")
 					}
 				}
 			}
@@ -140,7 +145,11 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			case "TEXT":
 				colString += fmt.Sprintf(" DEFAULT '%s'", col.DefaultValue)
 			case "INT", "BIGINT":
-				colString += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
+				isInt, err := strconv.ParseInt(col.DefaultValue, 10, 64)
+				if err != nil {
+					return "", false, fmt.Errorf("не верный тип данных дефолтного значения для типа %s: %s", col.DataType, col.DefaultValue)
+				}
+				colString += fmt.Sprintf(" DEFAULT %d", isInt)
 			case "BOOLEAN":
 				colString += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
 			case "TIMESTAMP", "DATE":
