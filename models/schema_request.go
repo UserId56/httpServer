@@ -5,7 +5,7 @@ import (
 )
 
 type ColumnDefinition struct {
-	ColumnName       string         `json:"column_name" binding:"required,alphanum,max=64"`
+	ColumnName       string         `json:"column_name" binding:"required,alphanum,min=2,max=64"`
 	DisplayName      string         `json:"display_name" binding:"required,min=2,max=128"`
 	DataType         string         `json:"data_type" binding:"required,oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON, ref"`
 	ReferencedScheme string         `json:"referenced_scheme,omitempty"`
@@ -16,7 +16,7 @@ type ColumnDefinition struct {
 }
 
 type CreateSchemeRequest struct {
-	Name        string             `json:"table_name" binding:"required,alphanum,max=64"`
+	Name        string             `json:"table_name" binding:"required,alphanum,min=2,max=64"`
 	DisplayName string             `json:"display_name" binding:"required,min=2,max=128"`
 	Columns     []ColumnDefinition `json:"columns" binding:"required,min=1"`
 }
