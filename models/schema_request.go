@@ -9,8 +9,8 @@ type ColumnDefinition struct {
 	DisplayName      string         `json:"display_name" binding:"required,min=2,max=128"`
 	DataType         string         `json:"data_type" binding:"required,oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON, ref"`
 	ReferencedScheme string         `json:"referenced_scheme,omitempty"`
-	IsRequired       bool           `json:"is_required"`
-	NotNull          bool           `json:"not_null"`
+	IsUnique         *bool          `json:"is_unique"`
+	NotNull          *bool          `json:"not_null"`
 	DefaultValue     string         `json:"default_value,omitempty"`
 	ValidationRules  datatypes.JSON `json:"validation_rules,omitempty"`
 }
@@ -29,7 +29,7 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 			DisplayName:      colDef.DisplayName,
 			DataType:         colDef.DataType,
 			ReferencedScheme: colDef.ReferencedScheme,
-			IsRequired:       colDef.IsRequired,
+			IsUnique:         colDef.IsUnique,
 			DefaultValue:     colDef.DefaultValue,
 			ValidationRules:  colDef.ValidationRules,
 		}

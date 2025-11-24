@@ -66,19 +66,19 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 					}
 				}
 				if column.NotNull != currentCol.NotNull {
-					if column.NotNull {
+					if column.NotNull != nil && *column.NotNull {
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET NOT NULL, ", column.ColumnName)
 					} else {
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP NOT NULL, ", column.ColumnName)
 					}
 				}
-				if column.IsRequired != currentCol.IsRequired {
-					if column.IsRequired {
-						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" ADD UNIQUE, ", column.ColumnName)
+				if column.IsUnique != currentCol.IsUnique {
+					unName := fmt.Sprintf("uniq_%s_%s", currentScheme.Name, column.ColumnName)
+					if column.IsUnique != nil && *column.IsUnique {
+						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" UNIQUE (\"%s\"), ", unName, column.ColumnName)
 					} else {
-						// Note: Dropping a unique constraint requires knowing its name.
-						// This is a simplified example and may need adjustment based on actual constraint names.
-						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s_unique\", ", column.ColumnName)
+
+						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", unName)
 					}
 				}
 				if column.DataType == "ref" && column.ReferencedScheme != currentCol.ReferencedScheme {
@@ -160,14 +160,14 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 				colString += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
 			default:
 				// Unsupported data type for default value
-				return "", false, fmt.Errorf("Не верный тип данных %s", col.DataType)
+				return "", false, fmt.Errorf("не верный тип данных %s", col.DataType)
 			}
 
 		}
-		if col.NotNull {
+		if col.NotNull != nil && *col.NotNull {
 			colString += " NOT NULL"
 		}
-		if col.IsRequired {
+		if col.IsUnique != nil && *col.IsUnique {
 			colString += " UNIQUE"
 		}
 		if col.DataType == "ref" && col.ReferencedScheme != "" {

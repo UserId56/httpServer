@@ -255,6 +255,7 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 		}
 		//Обновляем информацию о столбцах, которые не были удалены и не были добавлены заново
 		for _, colUpdate := range req.Columns {
+			fmt.Printf("%+v\n", colUpdate)
 			if err := tx.Updates(&colUpdate).Error; err != nil {
 				logger.Log(err, "Ошибка обновления информации о колонке таблицы", logger.Error)
 				c.JSON(500, gin.H{"error": "Ошибка на сервере"})
