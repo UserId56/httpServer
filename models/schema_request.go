@@ -25,12 +25,13 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 	var columns []*DynamicColumns
 	for _, colDef := range ctr.Columns {
 		column := &DynamicColumns{
-			ColumnName:      colDef.ColumnName,
-			DisplayName:     colDef.DisplayName,
-			DataType:        colDef.DataType,
-			IsRequired:      colDef.IsRequired,
-			DefaultValue:    colDef.DefaultValue,
-			ValidationRules: colDef.ValidationRules,
+			ColumnName:       colDef.ColumnName,
+			DisplayName:      colDef.DisplayName,
+			DataType:         colDef.DataType,
+			ReferencedScheme: colDef.ReferencedScheme,
+			IsRequired:       colDef.IsRequired,
+			DefaultValue:     colDef.DefaultValue,
+			ValidationRules:  colDef.ValidationRules,
 		}
 		columns = append(columns, column)
 	}
