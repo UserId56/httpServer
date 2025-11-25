@@ -30,6 +30,7 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 			DataType:         colDef.DataType,
 			ReferencedScheme: colDef.ReferencedScheme,
 			IsUnique:         colDef.IsUnique,
+			NotNull:          colDef.NotNull,
 			DefaultValue:     colDef.DefaultValue,
 			ValidationRules:  colDef.ValidationRules,
 		}
