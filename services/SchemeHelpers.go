@@ -170,8 +170,12 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 		if col.IsUnique != nil && *col.IsUnique {
 			colString += " UNIQUE"
 		}
-		if col.DataType == "ref" && col.ReferencedScheme != "" {
-			colString += fmt.Sprintf(` REFERENCES "%s" (ID) ON DELETE SET NULL`, col.ReferencedScheme)
+		if col.DataType == "ref" {
+			if col.ReferencedScheme != "" {
+				colString += fmt.Sprintf(` REFERENCES "%s" (ID) ON DELETE SET NULL`, col.ReferencedScheme)
+			} else {
+				return "", false, fmt.Errorf("пустая ссылка на коллекцию")
+			}
 		}
 		cols = append(cols, colString)
 	}
