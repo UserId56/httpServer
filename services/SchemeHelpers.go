@@ -187,3 +187,18 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 
 	return sql, false, nil
 }
+
+func CheckRefTables(columns []*models.DynamicColumns, db *gorm.DB) error {
+	for _, col := range columns {
+		if col.DataType == "ref" {
+			var count int64
+			if err := db.Model(&models.DynamicScheme{}).Where("name = ?", col.ReferencedScheme).Count(&count).Error; err != nil {
+				return fmt.Errorf("ошибка проверки ссылки на таблицу %s: %v", col.ReferencedScheme, err)
+			}
+			if count == 0 {
+				return fmt.Errorf("поле %s ссылается на несуществующую таблицу %s", col.ColumnName, col.ReferencedScheme)
+			}
+		}
+	}
+	return nil
+}
