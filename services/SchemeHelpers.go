@@ -65,14 +65,14 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP DEFAULT, ", column.ColumnName)
 					}
 				}
-				if column.NotNull != currentCol.NotNull {
+				if *column.NotNull != *currentCol.NotNull {
 					if column.NotNull != nil && *column.NotNull {
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET NOT NULL, ", column.ColumnName)
 					} else {
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP NOT NULL, ", column.ColumnName)
 					}
 				}
-				if column.IsUnique != currentCol.IsUnique {
+				if *column.IsUnique != *currentCol.IsUnique {
 					unName := fmt.Sprintf("uniq_%s_%s", currentScheme.Name, column.ColumnName)
 					if column.IsUnique != nil && *column.IsUnique {
 						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" UNIQUE (\"%s\"), ", unName, column.ColumnName)
@@ -119,6 +119,9 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 		resultSQL = SQLAlert
 	}
 	currentScheme.Columns = oldColumns
+	if len(resultSQL) == len(SQLAlert) {
+		resultSQL = ""
+	}
 	return resultSQL, newColumns, deleteColumns, nil
 }
 
@@ -168,7 +171,8 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			colString += " NOT NULL"
 		}
 		if col.IsUnique != nil && *col.IsUnique {
-			colString += " UNIQUE"
+			unName := fmt.Sprintf("uniq_%s_%s", req.Name, col.ColumnName)
+			colString += fmt.Sprintf(" CONSTRAINT \"%s\" UNIQUE", unName)
 		}
 		if col.DataType == "ref" {
 			if col.ReferencedScheme != "" {

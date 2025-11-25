@@ -263,21 +263,23 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 				return
 			}
 		}
-		//обновляем таблицу
-		if err := tx.Exec(sqlStr).Error; err != nil {
-			logger.Log(err, "Ошибка обновления таблицы в базе данных", logger.Error)
-			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
-			tx.Rollback()
-			return
-		}
-		//Обновляем информацию о столбцах, которые не были удалены и не были добавлены заново
-		for _, colUpdate := range req.Columns {
-			fmt.Printf("%+v\n", colUpdate)
-			if err := tx.Updates(&colUpdate).Error; err != nil {
-				logger.Log(err, "Ошибка обновления информации о колонке таблицы", logger.Error)
+		if sqlStr != "" {
+			//обновляем таблицу
+			if err := tx.Exec(sqlStr).Error; err != nil {
+				logger.Log(err, "Ошибка обновления таблицы в базе данных", logger.Error)
 				c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 				tx.Rollback()
 				return
+			}
+			//Обновляем информацию о столбцах, которые не были удалены и не были добавлены заново
+			for _, colUpdate := range req.Columns {
+				fmt.Printf("%+v\n", colUpdate)
+				if err := tx.Updates(&colUpdate).Error; err != nil {
+					logger.Log(err, "Ошибка обновления информации о колонке таблицы", logger.Error)
+					c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+					tx.Rollback()
+					return
+				}
 			}
 		}
 
