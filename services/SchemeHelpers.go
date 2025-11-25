@@ -22,6 +22,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 	var oldColumns []*models.DynamicColumns
 	var deleteColumns []*models.DynamicColumns
 	SQLAlert := fmt.Sprintf("ALTER TABLE \"%s\" ", currentScheme.Name)
+	defStringLen := len(SQLAlert)
 	SQLUpdate := fmt.Sprintf("UPDATE \"%s\" ", currentScheme.Name)
 	isUpdate := false
 	var resultSQL string
@@ -34,9 +35,8 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 		for _, currentCol := range currentScheme.Columns {
 			if column.ID == currentCol.ID {
 				column.DynamicTableID = currentScheme.ID
-				oldColumns = append(oldColumns, column)
 				if column.ColumnName != currentCol.ColumnName {
-					SQLAlert += fmt.Sprintf("RENAME COLUMN \"%s\" TO \"%s\", ", currentCol.ColumnName, column.ColumnName)
+					SQLAlert += fmt.Sprintf("RENAME COLUMN \"%s\" TO \"%s\"; ALTER TABLE \"%s\" ", currentCol.ColumnName, column.ColumnName, currentScheme.Name)
 				}
 				if column.DataType != currentCol.DataType {
 					var dataType string
@@ -44,6 +44,11 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						dataType = "INT"
 					} else {
 						dataType = column.DataType
+					}
+					//Пустая ссылка если меняется тип данных
+					if column.DataType != "ref" && currentCol.DataType == "ref" {
+						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, currentCol.ReferencedScheme, currentCol.ColumnName))
+						column.ReferencedScheme = ""
 					}
 					SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE %s USING \"%s\"::%s, ", column.ColumnName, dataType, column.ColumnName, dataType)
 				}
@@ -65,36 +70,39 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP DEFAULT, ", column.ColumnName)
 					}
 				}
-				if *column.NotNull != *currentCol.NotNull {
-					if column.NotNull != nil && *column.NotNull {
-						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET NOT NULL, ", column.ColumnName)
-					} else {
-						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP NOT NULL, ", column.ColumnName)
-					}
+				if column.NotNull != nil && *column.NotNull {
+					SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET NOT NULL, ", column.ColumnName)
+				} else {
+					boolFalse := false
+					column.NotNull = &boolFalse
+					SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" DROP NOT NULL, ", column.ColumnName)
 				}
-				if *column.IsUnique != *currentCol.IsUnique {
-					unName := fmt.Sprintf("uniq_%s_%s", currentScheme.Name, column.ColumnName)
-					if column.IsUnique != nil && *column.IsUnique {
-						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" UNIQUE (\"%s\"), ", unName, column.ColumnName)
-					} else {
 
-						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", unName)
-					}
+				unName := fmt.Sprintf("uniq_%s_%s", currentScheme.Name, column.ColumnName)
+				unNameOld := fmt.Sprintf("uniq_%s_%s", currentScheme.Name, currentCol.ColumnName)
+				if column.IsUnique != nil && *column.IsUnique {
+					SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" UNIQUE (\"%s\"), ", unName, column.ColumnName)
+				} else {
+					boolFalse := false
+					column.IsUnique = &boolFalse
+					SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", unNameOld)
 				}
+
 				if column.DataType == "ref" && column.ReferencedScheme != currentCol.ReferencedScheme {
 					if currentCol.DataType == "ref" && currentCol.ReferencedScheme != "" {
 						// Drop existing foreign key constraint
-						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s", currentScheme.Name, column.ReferencedScheme))
+						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, column.ReferencedScheme, currentCol.ColumnName))
 					}
 					if column.ReferencedScheme != "" {
 						// Add new foreign key constraint
 						SQLUpdate += fmt.Sprintf("SET \"%s\" = NULL WHERE \"%s\" NOT IN (SELECT ID FROM \"%s\") AND \"%s\" IS NOT NULL, ", column.ColumnName, column.ColumnName, column.ReferencedScheme, column.ColumnName)
 						isUpdate = true
-						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (ID) ON DELETE SET NULL NOT VALID, ", fmt.Sprintf("fk_%s_%s", currentScheme.Name, column.ReferencedScheme), column.ColumnName, column.ReferencedScheme)
+						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (ID) ON DELETE SET NULL NOT VALID, ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, column.ReferencedScheme, column.ColumnName), column.ColumnName, column.ReferencedScheme)
 					} else {
 						return "", nil, nil, fmt.Errorf("пустая ссылка на коллекцию")
 					}
 				}
+				oldColumns = append(oldColumns, column)
 			}
 		}
 	}
@@ -119,7 +127,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 		resultSQL = SQLAlert
 	}
 	currentScheme.Columns = oldColumns
-	if len(resultSQL) == len(SQLAlert) {
+	if len(resultSQL) == defStringLen {
 		resultSQL = ""
 	}
 	return resultSQL, newColumns, deleteColumns, nil
@@ -127,6 +135,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 
 func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string, bool, error) {
 	var cols []string
+	var colRef []string
 	if !isAdd {
 		cols = append(cols, "id SERIAL PRIMARY KEY")
 	}
@@ -176,13 +185,14 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 		}
 		if col.DataType == "ref" {
 			if col.ReferencedScheme != "" {
-				colString += fmt.Sprintf(` REFERENCES "%s" (ID) ON DELETE SET NULL`, col.ReferencedScheme)
+				colRef = append(colRef, fmt.Sprintf(`CONSTRAINT "%s" FOREIGN KEY ("%s") REFERENCES "%s" (ID) ON DELETE SET NULL`, fmt.Sprintf("fk_%s_%s_%s", req.Name, col.ReferencedScheme, col.ColumnName), col.ColumnName, col.ReferencedScheme))
 			} else {
 				return "", false, fmt.Errorf("пустая ссылка на коллекцию")
 			}
 		}
 		cols = append(cols, colString)
 	}
+	cols = append(cols, colRef...)
 	if isAdd {
 		sql := fmt.Sprintf(`ALTER TABLE "%s" %s;`, req.Name, strings.Join(cols, ", "))
 		return sql, true, nil

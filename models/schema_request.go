@@ -24,11 +24,17 @@ type CreateSchemeRequest struct {
 func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 	var columns []*DynamicColumns
 	for _, colDef := range ctr.Columns {
+		var refScheme string
+		if colDef.DataType != "ref" {
+			refScheme = ""
+		} else {
+			refScheme = colDef.ReferencedScheme
+		}
 		column := &DynamicColumns{
 			ColumnName:       colDef.ColumnName,
 			DisplayName:      colDef.DisplayName,
 			DataType:         colDef.DataType,
-			ReferencedScheme: colDef.ReferencedScheme,
+			ReferencedScheme: refScheme,
 			IsUnique:         colDef.IsUnique,
 			NotNull:          colDef.NotNull,
 			DefaultValue:     colDef.DefaultValue,
