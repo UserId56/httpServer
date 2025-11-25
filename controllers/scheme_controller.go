@@ -51,13 +51,21 @@ func (tc *SchemeController) SchemeCreate(c *gin.Context) {
 		tx.Rollback()
 		return
 	}
+	dynamicTable := req.CreateDynamicTable()
+	//Проверяем ссылки на другие таблицы
+	if err := services.CheckRefTables(dynamicTable.Columns, tx); err != nil {
+		logger.Log(err, "Ошибка проверки ссылок на другие таблицы", logger.Error)
+		c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
+		tx.Rollback()
+		return
+	}
+	//Создаем таблицу в базе данных
 	if err := tx.Exec(SqlQuery).Error; err != nil {
 		logger.Log(err, "Ошибка создания таблицы", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		tx.Rollback()
 		return
 	}
-	dynamicTable := req.CreateDynamicTable()
 	if err := tx.Create(&dynamicTable).Error; err != nil {
 		logger.Log(err, "Ошибка сохранения информации о таблице", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
@@ -176,6 +184,13 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 		sqlStr, newColumns, deleteColumns, err := services.GenerateUpdateTableSQL(req.Columns, scheme)
 		if err != nil {
 			logger.Log(err, "Ошибка генерации SQL для обновления таблицы", logger.Error)
+			c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
+			tx.Rollback()
+			return
+		}
+		//Проверяем ссылки на другие таблицы
+		if err = services.CheckRefTables(req.Columns, tx); err != nil {
+			logger.Log(err, "Ошибка проверки ссылок на другие таблицы", logger.Error)
 			c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
 			tx.Rollback()
 			return
