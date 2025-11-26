@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 )
 
@@ -39,6 +40,11 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 					SQLAlert += fmt.Sprintf("RENAME COLUMN \"%s\" TO \"%s\"; ALTER TABLE \"%s\" ", currentCol.ColumnName, column.ColumnName, currentScheme.Name)
 				}
 				if column.DataType != currentCol.DataType {
+					validate := validator.New()
+					err := validate.Var(column.DataType, "oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON ref")
+					if err != nil {
+						return "", nil, nil, fmt.Errorf("не верный тип данных %s", column.DataType)
+					}
 					var dataType string
 					if column.DataType == "ref" && column.ReferencedScheme != "" {
 						dataType = "INT"
