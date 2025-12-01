@@ -3,6 +3,7 @@ package controllers
 import (
 	"httpServer/logger"
 	"httpServer/models"
+	"httpServer/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -39,7 +40,7 @@ func (test *TestController) TestCreate(c *gin.Context) {
 	c.JSON(201, gin.H{"message": "Тестовая запись создана", "test": testList})
 }
 
-func (test TestController) TestRole(c *gin.Context) {
+func (test *TestController) TestRole(c *gin.Context) {
 	var rolesList []models.Role
 	if result := test.DB.Find(&rolesList); result.Error != nil {
 		logger.Log(result.Error, "Ошибка получения ролей", logger.Error)
@@ -47,4 +48,34 @@ func (test TestController) TestRole(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"roles": rolesList})
+}
+
+func (test *TestController) TestWhere(c *gin.Context) {
+	var data models.Query
+	object := c.Param("object")
+	if err := c.ShouldBindJSON(&data); err != nil {
+		c.JSON(400, gin.H{"error": "Не верные данные"})
+		return
+	}
+	var fields []models.DynamicColumns
+	if err := test.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = (SELECT id FROM dynamic_schemes WHERE name = ?)", object).Find(&fields).Error; err != nil {
+		logger.Log(err, "Ошибка получения полей для объекта "+object, logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка получения полей для объекта " + object})
+		return
+	}
+	whereSQL, args, err := services.WhereGeneration(data.Where, fields, "AND")
+	if err != nil {
+		logger.Log(err, "Ошибка генерации условия", logger.Error)
+		c.JSON(400, gin.H{"error": "Ошибка генерации условия: " + err.Error()})
+		return
+	}
+	var results []map[string]interface{}
+	query := test.DB.Table(object).Where(whereSQL, args...)
+	if err := query.Find(&results).Error; err != nil {
+		logger.Log(err, "Ошибка выполнения запроса", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка выполнения запроса"})
+		return
+	}
+	c.JSON(200, gin.H{"results": results})
+
 }
