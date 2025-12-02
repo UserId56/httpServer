@@ -25,7 +25,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			user.GET("/:id", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserGetByID)
 			user.DELETE("/:id", middleware.RequirePermission(db, []string{"user.DELETE"}), appController.User.UserDeleteByID)
 			user.PUT("/:id", middleware.RequirePermission(db, []string{"user.PUT"}), appController.User.UserUpdateByID)
-			user.GET("/query", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserQuery)
+			user.POST("/query", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserQuery)
 		}
 		//ROLE METHODS
 		role := private.Group("/role")
@@ -34,7 +34,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			role.POST("/", middleware.RequirePermission(db, []string{"role.POST"}), appController.Role.RoleCreate)
 			role.PUT("/:id", middleware.RequirePermission(db, []string{"role.PUT"}), appController.Role.RoleUpdateByID)
 			role.DELETE("/:id", middleware.RequirePermission(db, []string{"role.DELETE"}), appController.Role.RoleDeleteByID)
-			role.GET("/query", middleware.RequirePermission(db, []string{"role.GET"}), appController.Role.RoleQuery)
+			role.POST("/query", middleware.RequirePermission(db, []string{"role.GET"}), appController.Role.RoleQuery)
 		}
 		//	SCHEME METHODS
 		scheme := private.Group("/scheme")
@@ -44,6 +44,14 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			scheme.GET("/", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Sheme.SchemeGetLst)
 			scheme.PUT("/:name", middleware.RequirePermission(db, []string{"scheme.PUT"}), appController.Sheme.SchemeUpdateByName)
 			scheme.DELETE("/:name", middleware.RequirePermission(db, []string{"scheme.DELETE"}), appController.Sheme.SchemeDelete)
+		}
+		object := private.Group("/:object")
+		{
+			//object.POST("/", middleware.RequirePermission(db, []string{"object.POST"}), appController.DynamicObject.DynamicObjectCreate)
+			//object.GET("/:id", middleware.RequirePermission(db, []string{"object.GET"}), appController.DynamicObject.DynamicObjectGetByID)
+			//object.PUT("/:id", middleware.RequirePermission(db, []string{"object.PUT"}), appController.DynamicObject.DynamicObjectUpdateByID)
+			//object.DELETE("/:id", middleware.RequirePermission(db, []string{"object.DELETE"}), appController.DynamicObject.DynamicObjectDeleteByID)
+			object.POST("/query", middleware.RequirePermission(db, []string{"object.GET"}), appController.Test.TestWhere)
 		}
 	}
 }

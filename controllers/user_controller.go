@@ -303,38 +303,59 @@ func (uc *UserController) UserDeleteByID(c *gin.Context) {
 }
 
 func (uc *UserController) UserQuery(c *gin.Context) {
-	take := c.DefaultQuery("take", "10")
-	skip := c.DefaultQuery("skip", "0")
-
-	takeInt, err := strconv.Atoi(take)
-	if err != nil || takeInt <= 0 {
-		c.JSON(400, gin.H{"error": "Параметр 'take' должен быть положительным целым числом"})
+	var Query models.Query
+	object := "users"
+	if err := c.ShouldBindJSON(&Query); err != nil {
+		c.JSON(400, gin.H{"error": "Не верные данные"})
 		return
 	}
-	skipInt, err := strconv.Atoi(skip)
-	if err != nil || skipInt < 0 {
-		c.JSON(400, gin.H{"error": "Параметр 'skip' должен быть неотрицательным целым числом"})
+	var fields []models.DynamicColumns
+	if err := uc.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = (SELECT id FROM dynamic_schemes WHERE name = ?)", object).Find(&fields).Error; err != nil {
+		logger.Log(err, "Ошибка получения полей для объекта "+object, logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка получения полей для объекта " + object})
 		return
 	}
-	var count int64
-	var users []models.UserGetResponse
-	err = uc.DB.Model(&models.User{}).Count(&count).Error
-	if count == 0 {
-		c.Header("X-Total-Count", "0")
-		c.JSON(200, gin.H{"users": []models.User{}})
-		return
-	}
+	whereSQL, args, err := services.WhereGeneration(Query.Where, fields, "AND")
 	if err != nil {
-		logger.Log(err, "Ошибка получения количества пользователей", logger.Error)
+		logger.Log(err, "Ошибка генерации условия", logger.Error)
+		c.JSON(400, gin.H{"error": "Ошибка генерации условия: " + err.Error()})
+		return
+	}
+	var users []map[string]interface{}
+	if len(Query.Include) == 0 {
+		Query.Include = []string{"created_at", "updated_at", "id", "username", "email", "avatar", "bio", "role_id"}
+	}
+	dbQuery := uc.DB.Model(&models.User{}).Select(Query.Include)
+	if whereSQL != "" {
+		dbQuery = dbQuery.Where(whereSQL, args...)
+	}
+	if Query.Count {
+		var count int64
+		if err := dbQuery.Count(&count).Error; err != nil {
+			logger.Log(err, "Ошибка подсчета количества пользователей", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		c.Header("X-Total-Count", strconv.FormatInt(count, 10))
+	}
+	if Query.Take > 0 {
+		dbQuery = dbQuery.Limit(Query.Take)
+	}
+	if Query.Skip > 0 {
+		dbQuery = dbQuery.Offset(Query.Skip)
+	}
+	if len(Query.Order) > 0 {
+		orderStr, err := services.OrderGeneration(Query.Order, fields)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Ошибка генерации сортировки: " + err.Error()})
+			return
+		}
+		dbQuery = dbQuery.Order(orderStr)
+	}
+	if err := dbQuery.Find(&users).Error; err != nil {
+		logger.Log(err, "Ошибка получения пользователей", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	err = uc.DB.Model(&models.User{}).Offset(skipInt).Limit(takeInt).Find(&users).Error
-	if err != nil {
-		logger.Log(err, "Ошибка получения списка пользователей", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
-		return
-	}
-	c.Header("X-Total-Count", strconv.FormatInt(count, 10))
 	c.JSON(200, gin.H{"users": users})
 }

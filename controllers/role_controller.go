@@ -3,7 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"httpServer/logger"
 	"httpServer/models"
+	"httpServer/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -127,36 +129,57 @@ func (rc RoleController) RoleDeleteByID(c *gin.Context) {
 }
 
 func (rc RoleController) RoleQuery(c *gin.Context) {
-	take := c.DefaultQuery("take", "10")
-	skip := c.DefaultQuery("skip", "0")
-
-	takeInt, err := strconv.Atoi(take)
-	if err != nil || takeInt <= 0 {
-		c.JSON(400, gin.H{"error": "Параметр 'take' должен быть положительным целым числом"})
+	var Query models.Query
+	if err := c.ShouldBindJSON(&Query); err != nil {
+		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
 		return
 	}
-	skipInt, err := strconv.Atoi(skip)
-	if err != nil || skipInt < 0 {
-		c.JSON(400, gin.H{"error": "Параметр 'skip' должен быть неотрицательным целым числом"})
+	var fields []models.DynamicColumns
+	if err := rc.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = (SELECT id FROM dynamic_schemes WHERE name = ?)", "roles").Find(&fields).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Ошибка получения полей для объекта roles"})
 		return
 	}
-	var count int64
+	whereSQL, args, err := services.WhereGeneration(Query.Where, fields, "AND")
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Ошибка генерации условия: " + err.Error()})
+		return
+	}
 	var roles []models.Role
-	err = rc.DB.Model(&models.Role{}).Count(&count).Error
-	if count == 0 {
-		c.Header("X-Total-Count", "0")
-		c.JSON(200, gin.H{"roles": []models.Role{}})
+	queryBuilder := rc.DB.Model(&models.Role{})
+	if whereSQL != "" {
+		queryBuilder = queryBuilder.Where(whereSQL, args...)
+	}
+	if len(Query.Include) == 0 {
+		Query.Include = []string{"created_at", "updated_at", "deleted_at, id, name, permission"}
+	}
+	queryBuilder = queryBuilder.Select(Query.Include)
+	if Query.Count {
+		var count int64
+		if err := queryBuilder.Count(&count).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Ошибка подсчета записей"})
+			return
+		}
+		c.Header("X-Total-Count", strconv.FormatInt(count, 10))
+	}
+	if Query.Take > 0 {
+		queryBuilder = queryBuilder.Limit(Query.Take)
+	}
+	if Query.Skip > 0 {
+		queryBuilder = queryBuilder.Offset(Query.Skip)
+	}
+	if len(Query.Order) > 0 {
+		orderStr, err := services.OrderGeneration(Query.Order, fields)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Ошибка в поле сортировки: " + err.Error()})
+			return
+		}
+		queryBuilder = queryBuilder.Order(orderStr)
+
+	}
+	if err := queryBuilder.Find(&roles).Error; err != nil {
+		logger.Log(err, "Ошибка получения роли", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка выполнения запроса"})
 		return
 	}
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
-		return
-	}
-	err = rc.DB.Model(&models.Role{}).Limit(takeInt).Offset(skipInt).Find(&roles).Error
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
-		return
-	}
-	c.Header("X-Total-Count", strconv.FormatInt(count, 10))
 	c.JSON(200, gin.H{"roles": roles})
 }
