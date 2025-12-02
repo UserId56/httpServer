@@ -291,7 +291,7 @@ func (uc *UserController) UserDeleteByID(c *gin.Context) {
 			c.JSON(404, gin.H{"error": "Пользователь не найден"})
 			return
 		}
-		c.JSON(201, gin.H{"message": "Пользователь успешно удален окончательно"})
+		c.JSON(200, gin.H{"message": "Пользователь успешно удален окончательно"})
 		return
 	}
 	if err := uc.DB.Delete(&models.User{}, id).Error; err != nil {
