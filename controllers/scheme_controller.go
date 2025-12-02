@@ -78,7 +78,10 @@ func (tc *SchemeController) SchemeCreate(c *gin.Context) {
 
 func (tc *SchemeController) SchemeDelete(c *gin.Context) {
 	schemeName := c.Param("name")
-	fmt.Println("!!!!!!!!!!!!!!!!!schemeName:", schemeName)
+	if schemeName == "users" || schemeName == "roles" || schemeName == "dynamic_schemes" || schemeName == "column_definitions" || schemeName == "refresh_tokens" {
+		c.JSON(400, gin.H{"error": "Таблица не найдена"})
+		return
+	}
 	tx := tc.DB.Begin()
 	if tx.Error != nil {
 		logger.Log(tx.Error, "Ошибка создания транзакции", logger.Error)
@@ -153,6 +156,10 @@ func (tc *SchemeController) SchemeGetLst(c *gin.Context) {
 
 func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 	schemeName := c.Param("name")
+	if schemeName == "users" || schemeName == "roles" || schemeName == "dynamic_schemes" || schemeName == "column_definitions" || schemeName == "refresh_tokens" {
+		c.JSON(400, gin.H{"error": "Таблица не найдена"})
+		return
+	}
 	scheme, err := services.SchemeHelperGetByName(tc.DB, schemeName)
 	if err != nil {
 		if errors.As(err, &gorm.ErrRecordNotFound) {
