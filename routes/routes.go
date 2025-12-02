@@ -25,7 +25,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			user.GET("/:id", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserGetByID)
 			user.DELETE("/:id", middleware.RequirePermission(db, []string{"user.DELETE"}), appController.User.UserDeleteByID)
 			user.PUT("/:id", middleware.RequirePermission(db, []string{"user.PUT"}), appController.User.UserUpdateByID)
-			user.GET("/query", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserQuery)
+			user.POST("/query", middleware.RequirePermission(db, []string{"user.GET"}), appController.User.UserQuery)
 		}
 		//ROLE METHODS
 		role := private.Group("/role")
@@ -34,7 +34,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			role.POST("/", middleware.RequirePermission(db, []string{"role.POST"}), appController.Role.RoleCreate)
 			role.PUT("/:id", middleware.RequirePermission(db, []string{"role.PUT"}), appController.Role.RoleUpdateByID)
 			role.DELETE("/:id", middleware.RequirePermission(db, []string{"role.DELETE"}), appController.Role.RoleDeleteByID)
-			role.GET("/query", middleware.RequirePermission(db, []string{"role.GET"}), appController.Role.RoleQuery)
+			role.POST("/query", middleware.RequirePermission(db, []string{"role.GET"}), appController.Role.RoleQuery)
 		}
 		//	SCHEME METHODS
 		scheme := private.Group("/scheme")

@@ -21,14 +21,71 @@ func getOperator(operator string) (string, error) {
 		return ">=", nil
 	case "lte":
 		return "<=", nil
-	case "like":
-		return "LIKE", nil
+	case "in":
+		return "IN", nil
+	case "notin":
+		return "NOT IN", nil
+	case "null":
+		return "IS NULL", nil
+	case "notNull":
+		return "IS NOT NULL", nil
+
 	default:
 		return "", fmt.Errorf("неизвестный оператор: %s", operator)
 	}
 }
 
+func OrderGeneration(listOrder []models.Order, fields []models.DynamicColumns) (string, error) {
+	if len(listOrder) == 0 {
+		return "", nil
+	}
+	defaultFields := []models.DynamicColumns{
+		{ColumnName: "id", DataType: "INT"},
+		{ColumnName: "created_at", DataType: "TIMESTAMP"},
+		{ColumnName: "updated_at", DataType: "TIMESTAMP"},
+		{ColumnName: "deleted_at", DataType: "TIMESTAMP"},
+	}
+	fields = append(fields, defaultFields...)
+	result := ""
+	for index, order := range listOrder {
+		if order.Field == "" {
+			return "", fmt.Errorf("поле для сортировки не указано")
+		}
+		fieldFound := false
+		for _, field := range fields {
+			if field.ColumnName == order.Field {
+				fieldFound = true
+				break
+			}
+		}
+		if !fieldFound {
+			return "", fmt.Errorf("поле для сортировки %s не найдено в схеме", order.Field)
+		}
+		switch order.Direction {
+		case "ASC", "DESC":
+			if index == 0 {
+				result += fmt.Sprintf(`"%s" %s`, order.Field, order.Direction)
+			} else {
+				result += fmt.Sprintf(`, "%s" %s`, order.Field, order.Direction)
+			}
+		default:
+			return "", fmt.Errorf("неизвестное направление сортировки: %s", order.Direction)
+		}
+	}
+	return result, nil
+}
+
 func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, operator string) (string, []interface{}, error) {
+	if len(dataWhere) == 0 {
+		return "", nil, nil
+	}
+	defaultFields := []models.DynamicColumns{
+		{ColumnName: "id", DataType: "INT"},
+		{ColumnName: "created_at", DataType: "TIMESTAMP"},
+		{ColumnName: "updated_at", DataType: "TIMESTAMP"},
+		{ColumnName: "deleted_at", DataType: "TIMESTAMP"},
+	}
+	fields = append(fields, defaultFields...)
 	result := "( "
 	var arg []interface{}
 	for index, value := range dataWhere {

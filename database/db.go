@@ -79,6 +79,38 @@ func seedDefaultData(db *gorm.DB) error {
 				return err
 			}
 		}
+		userDynamicColumns := []models.DynamicColumns{
+			{ColumnName: "username", DataType: "TEXT", DynamicTableID: usersScheme.ID},
+			{ColumnName: "email", DataType: "TEXT", DynamicTableID: usersScheme.ID},
+			{ColumnName: "password", DataType: "TEXT", DynamicTableID: usersScheme.ID},
+			{ColumnName: "role_id", DataType: "ref", ReferencedScheme: "roles", DynamicTableID: usersScheme.ID},
+			{ColumnName: "avatar", DataType: "TEXT", DynamicTableID: usersScheme.ID},
+			{ColumnName: "bio", DataType: "TEXT", DynamicTableID: usersScheme.ID},
+		}
+		for _, col := range userDynamicColumns {
+			var existingCol models.DynamicColumns
+			if err := tx.Where("dynamic_table_id = ? AND column_name = ?", usersScheme.ID, col.ColumnName).First(&existingCol).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&col).Error; err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+		}
+		roleDynamicColumns := []models.DynamicColumns{
+			{ColumnName: "name", DataType: "TEXT", DynamicTableID: rolesScheme.ID},
+			{ColumnName: "permission", DataType: "JSONB", DynamicTableID: rolesScheme.ID},
+		}
+		for _, col := range roleDynamicColumns {
+			var existingCol models.DynamicColumns
+			if err := tx.Where("dynamic_table_id = ? AND column_name = ?", rolesScheme.ID, col.ColumnName).First(&existingCol).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&col).Error; err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
