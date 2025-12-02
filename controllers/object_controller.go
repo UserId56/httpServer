@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"httpServer/logger"
 	"httpServer/models"
 	"httpServer/services"
@@ -76,4 +77,44 @@ func (o *ObjectController) ObjectGetByID(c *gin.Context) {
 		return
 	}
 	c.JSON(200, result)
+}
+
+//func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {}
+
+func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
+	ObjectID := c.Param("object")
+	if services.CheckTableName(ObjectID) {
+		c.JSON(404, gin.H{"error": "Таблица не найдена"})
+		return
+	}
+	ElementID := c.Param("id")
+	type DeleteStruct struct {
+		ID        string
+		DeletedAt gorm.DeletedAt
+	}
+	var Element DeleteStruct
+	Element.ID = ElementID
+	if err := o.DB.Table(ObjectID).Unscoped().Where("id = ?", ElementID).First(&Element).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(404, gin.H{"error": "Элемент не найден"})
+			return
+		}
+		logger.Log(err, "Ошибка получения элемента", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка получения элемента: " + err.Error()})
+		return
+	}
+	if !Element.DeletedAt.Time.IsZero() {
+		if err := o.DB.Table(ObjectID).Unscoped().Delete(Element).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(404, gin.H{"error": "Элемент не найден"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "Элемент успешно удален окончательно"})
+		return
+	}
+	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Delete(&Element).Error; err != nil {
+		logger.Log(err, "Ошибка удаления элемента", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка удаления элемента: " + err.Error()})
+		return
+	}
+	c.Status(200)
 }
