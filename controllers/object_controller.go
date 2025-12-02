@@ -5,6 +5,7 @@ import (
 	"httpServer/logger"
 	"httpServer/models"
 	"httpServer/services"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -155,4 +156,62 @@ func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
 		return
 	}
 	c.Status(200)
+}
+
+func (o *ObjectController) ObjectQuery(c *gin.Context) {
+	var Query models.Query
+	object := c.Param("object")
+	if err := c.ShouldBindJSON(&Query); err != nil {
+		c.JSON(400, gin.H{"error": "Не верные данные"})
+		return
+	}
+	var fields []models.DynamicColumns
+	if err := o.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = (SELECT id FROM dynamic_schemes WHERE name = ?)", object).Find(&fields).Error; err != nil {
+		logger.Log(err, "Ошибка получения полей для объекта "+object, logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	whereSQL, args, err := services.WhereGeneration(Query.Where, fields, "AND")
+	if err != nil {
+		logger.Log(err, "Ошибка генерации условия", logger.Error)
+		c.JSON(400, gin.H{"error": "Ошибка генерации условия: " + err.Error()})
+		return
+	}
+	var results []map[string]interface{}
+	if len(Query.Include) == 0 {
+		Query.Include = services.GenInclude(fields)
+	}
+	dbQuery := o.DB.Table(object).Select(Query.Include)
+	if whereSQL != "" {
+		dbQuery = dbQuery.Where(whereSQL, args...)
+	}
+	if Query.Count {
+		var count int64
+		if err := dbQuery.Count(&count).Error; err != nil {
+			logger.Log(err, "Ошибка подсчета количества пользователей", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		c.Header("X-Total-Count", strconv.FormatInt(count, 10))
+	}
+	if Query.Take > 0 {
+		dbQuery = dbQuery.Limit(Query.Take)
+	}
+	if Query.Skip > 0 {
+		dbQuery = dbQuery.Offset(Query.Skip)
+	}
+	if len(Query.Order) > 0 {
+		orderStr, err := services.OrderGeneration(Query.Order, fields)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Ошибка генерации сортировки: " + err.Error()})
+			return
+		}
+		dbQuery = dbQuery.Order(orderStr)
+	}
+	if err := dbQuery.Find(&results).Error; err != nil {
+		logger.Log(err, "Ошибка получения пользователей", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.JSON(200, results)
 }

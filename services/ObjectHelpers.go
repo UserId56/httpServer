@@ -5,6 +5,14 @@ import (
 	"httpServer/models"
 )
 
+func GenInclude(fields []models.DynamicColumns) []string {
+	var result []string
+	for _, field := range fields {
+		result = append(result, fmt.Sprintf(`"%s"`, field.ColumnName))
+	}
+	return result
+}
+
 func CheckTableName(nameTable string) bool {
 	invalidNames := []string{"users", "roles", "dynamic_schemes", "dynamic_columns", "refresh_tokens"}
 	for _, invalidName := range invalidNames {
