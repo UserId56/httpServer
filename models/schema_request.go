@@ -21,8 +21,19 @@ type CreateSchemeRequest struct {
 	Columns     []ColumnDefinition `json:"columns" binding:"required,min=1"`
 }
 
+func ptrBool(data bool) *bool {
+	return &data
+}
+
 func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 	var columns []*DynamicColumns
+	var defaultColumns = []*DynamicColumns{
+		{ColumnName: "id", DisplayName: "ID", DataType: "INT", NotNull: ptrBool(true), IsUnique: ptrBool(true)},
+		{ColumnName: "created_at", DisplayName: "Дата создания", DataType: "TIMESTAMP", NotNull: ptrBool(true), DefaultValue: "NOW"},
+		{ColumnName: "updated_at", DisplayName: "Дата изменения", DataType: "TIMESTAMP", NotNull: ptrBool(true), DefaultValue: "NOW"},
+		{ColumnName: "deleted_at", DisplayName: "Дата удаления", DataType: "TIMESTAMP"},
+	}
+	columns = append(columns, defaultColumns...)
 	for _, colDef := range ctr.Columns {
 		var refScheme string
 		if colDef.DataType != "ref" {
