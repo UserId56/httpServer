@@ -21,6 +21,10 @@ func NewObjectController(db *gorm.DB) *ObjectController {
 
 func (o *ObjectController) ObjectCreate(c *gin.Context) {
 	objectName := c.Param("object")
+	if services.CheckTableName(objectName) {
+		c.JSON(404, gin.H{"error": "Таблица не найдена"})
+		return
+	}
 	var obj map[string]interface{}
 	if err := c.ShouldBindJSON(&obj); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -52,4 +56,24 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 		return
 	}
 	c.Status(201)
+}
+
+func (o *ObjectController) ObjectGetByID(c *gin.Context) {
+	ObjectID := c.Param("object")
+	if services.CheckTableName(ObjectID) {
+		c.JSON(404, gin.H{"error": "Таблица не найдена"})
+		return
+	}
+	ElementID := c.Param("id")
+	result := make(map[string]interface{})
+	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Limit(1).Find(&result).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(404, gin.H{"error": "Элемент не найден"})
+			return
+		}
+		logger.Log(err, "Ошибка получения элемента", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка получения элемента: " + err.Error()})
+		return
+	}
+	c.JSON(200, result)
 }
