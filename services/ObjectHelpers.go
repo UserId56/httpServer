@@ -5,8 +5,17 @@ import (
 	"httpServer/models"
 )
 
+func CheckTableName(nameTable string) bool {
+	invalidNames := []string{"users", "roles", "dynamic_schemes", "dynamic_columns", "refresh_tokens"}
+	for _, invalidName := range invalidNames {
+		if nameTable == invalidName {
+			return true
+		}
+	}
+	return false
+}
+
 func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.DynamicColumns, create bool) error {
-	fmt.Println(obj)
 	for _, field := range tableFields {
 		if create {
 			if field.ColumnName == "id" || field.ColumnName == "created_at" || field.ColumnName == "updated_at" || field.ColumnName == "deleted_at" {
