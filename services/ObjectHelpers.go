@@ -21,6 +21,10 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 			if field.ColumnName == "id" || field.ColumnName == "created_at" || field.ColumnName == "updated_at" || field.ColumnName == "deleted_at" {
 				continue
 			}
+		} else {
+			if field.ColumnName == "id" {
+				continue
+			}
 		}
 		var searchField bool
 		for key, value := range obj {
@@ -66,7 +70,9 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 					return fmt.Errorf("поле %s не существует в таблице", key)
 				}
 			}
-			return fmt.Errorf("обязательное поле %s отсутствует", field.ColumnName)
+			if create && field.NotNull != nil && *field.NotNull {
+				return fmt.Errorf("обязательное поле %s отсутствует", field.ColumnName)
+			}
 		}
 	}
 	return nil

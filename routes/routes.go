@@ -49,7 +49,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 		{
 			object.POST("/", middleware.RequirePermission(db, []string{"object.POST"}), appController.Object.ObjectCreate)
 			object.GET("/:id", middleware.RequirePermission(db, []string{"object.GET"}), appController.Object.ObjectGetByID)
-			//object.PUT("/:id", middleware.RequirePermission(db, []string{"object.PUT"}), appController.DynamicObject.DynamicObjectUpdateByID)
+			object.PUT("/:id", middleware.RequirePermission(db, []string{"object.PUT"}), appController.Object.ObjectUpdateByID)
 			object.DELETE("/:id", middleware.RequirePermission(db, []string{"object.DELETE"}), appController.Object.ObjectDeleteByID)
 			object.POST("/query", middleware.RequirePermission(db, []string{"object.GET"}), appController.Test.TestWhere)
 		}

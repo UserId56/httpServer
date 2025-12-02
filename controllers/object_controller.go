@@ -38,13 +38,13 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 			return
 		}
 		logger.Log(err, "Ошибка получения схемы таблицы", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка получения схемы таблицы: " + err.Error()})
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	var fields []models.DynamicColumns
 	if err := o.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = ?", table.ID).Find(&fields).Error; err != nil {
 		logger.Log(err, "Ошибка получения полей таблицы", logger.Error)
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	if err := services.CheckFieldsAndValue(obj, fields, true); err != nil {
@@ -53,7 +53,7 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 	}
 	if err := o.DB.Table(objectName).Create(&obj).Error; err != nil {
 		logger.Log(err, "Ошибка создания элемента", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка создания элемента: " + err.Error()})
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	c.Status(201)
@@ -73,13 +73,51 @@ func (o *ObjectController) ObjectGetByID(c *gin.Context) {
 			return
 		}
 		logger.Log(err, "Ошибка получения элемента", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка получения элемента: " + err.Error()})
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	c.JSON(200, result)
 }
 
-//func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {}
+func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
+	ObjectID := c.Param("object")
+	if services.CheckTableName(ObjectID) {
+		c.JSON(404, gin.H{"error": "Таблица не найдена"})
+		return
+	}
+	ElementID := c.Param("id")
+	var obj map[string]interface{}
+	if err := c.ShouldBindJSON(&obj); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	var table models.DynamicScheme
+	if err := o.DB.Where("name = ?", ObjectID).First(&table).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(404, gin.H{"error": "Таблица не найдена"})
+			return
+		}
+		logger.Log(err, "Ошибка получения схемы таблицы", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	var fields []models.DynamicColumns
+	if err := o.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = ?", table.ID).Find(&fields).Error; err != nil {
+		logger.Log(err, "Ошибка получения полей таблицы", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	if err := services.CheckFieldsAndValue(obj, fields, false); err != nil {
+		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
+		return
+	}
+	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Updates(obj).Error; err != nil {
+		logger.Log(err, "Ошибка обновления элемента", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.Status(200)
+}
 
 func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
 	ObjectID := c.Param("object")
@@ -100,7 +138,7 @@ func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
 			return
 		}
 		logger.Log(err, "Ошибка получения элемента", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка получения элемента: " + err.Error()})
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	if !Element.DeletedAt.Time.IsZero() {
@@ -113,7 +151,7 @@ func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
 	}
 	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Delete(&Element).Error; err != nil {
 		logger.Log(err, "Ошибка удаления элемента", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка удаления элемента: " + err.Error()})
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	c.Status(200)
