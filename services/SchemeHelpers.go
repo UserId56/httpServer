@@ -143,7 +143,7 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 	var cols []string
 	var colRef []string
 	if !isAdd {
-		cols = append(cols, "id SERIAL PRIMARY KEY")
+		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`)
 	}
 	for _, col := range req.Columns {
 		fmt.Printf("-!!!!!!%+v!!!!!-", col)
