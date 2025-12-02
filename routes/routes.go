@@ -39,15 +39,15 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 		//	SCHEME METHODS
 		scheme := private.Group("/scheme")
 		{
-			scheme.POST("/", middleware.RequirePermission(db, []string{"scheme.POST"}), appController.Sheme.SchemeCreate)
-			scheme.GET("/:name", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Sheme.SchemeGetByName)
-			scheme.GET("/", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Sheme.SchemeGetLst)
-			scheme.PUT("/:name", middleware.RequirePermission(db, []string{"scheme.PUT"}), appController.Sheme.SchemeUpdateByName)
-			scheme.DELETE("/:name", middleware.RequirePermission(db, []string{"scheme.DELETE"}), appController.Sheme.SchemeDelete)
+			scheme.POST("/", middleware.RequirePermission(db, []string{"scheme.POST"}), appController.Scheme.SchemeCreate)
+			scheme.GET("/:name", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Scheme.SchemeGetByName)
+			scheme.GET("/", middleware.RequirePermission(db, []string{"scheme.GET"}), appController.Scheme.SchemeGetLst)
+			scheme.PUT("/:name", middleware.RequirePermission(db, []string{"scheme.PUT"}), appController.Scheme.SchemeUpdateByName)
+			scheme.DELETE("/:name", middleware.RequirePermission(db, []string{"scheme.DELETE"}), appController.Scheme.SchemeDelete)
 		}
 		object := private.Group("/:object")
 		{
-			//object.POST("/", middleware.RequirePermission(db, []string{"object.POST"}), appController.DynamicObject.DynamicObjectCreate)
+			object.POST("/", middleware.RequirePermission(db, []string{"object.POST"}), appController.Object.ObjectCreate)
 			//object.GET("/:id", middleware.RequirePermission(db, []string{"object.GET"}), appController.DynamicObject.DynamicObjectGetByID)
 			//object.PUT("/:id", middleware.RequirePermission(db, []string{"object.PUT"}), appController.DynamicObject.DynamicObjectUpdateByID)
 			//object.DELETE("/:id", middleware.RequirePermission(db, []string{"object.DELETE"}), appController.DynamicObject.DynamicObjectDeleteByID)
