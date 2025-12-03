@@ -146,7 +146,6 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`)
 	}
 	for _, col := range req.Columns {
-		fmt.Printf("-!!!!!!%+v!!!!!-", col)
 		var colString string
 		var updateStr string
 		if isAdd {
@@ -157,7 +156,6 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 		} else {
 			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, col.DataType)
 		}
-		//fmt.Printf("%+v\n", col)
 		if col.DefaultValue != "" {
 			switch col.DataType {
 			case "TEXT":
