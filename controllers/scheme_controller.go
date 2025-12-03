@@ -204,7 +204,6 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 		}
 		//Удаляем колонки из информации о таблице
 		for _, delCol := range deleteColumns {
-			fmt.Printf("-Удаляем колонку: %+v\n", delCol)
 			//Удаляем из информации о таблице удаленные колонки
 			res := tx.Unscoped().Delete(delCol)
 			if res.Error != nil {
@@ -280,7 +279,6 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 			}
 			//Обновляем информацию о столбцах, которые не были удалены и не были добавлены заново
 			for _, colUpdate := range req.Columns {
-				fmt.Printf("%+v\n", colUpdate)
 				if err := tx.Save(&colUpdate).Error; err != nil {
 					logger.Log(err, "Ошибка обновления информации о колонке таблицы", logger.Error)
 					c.JSON(500, gin.H{"error": "Ошибка на сервере"})
