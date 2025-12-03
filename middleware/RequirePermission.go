@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"fmt"
 	"httpServer/models"
 	"slices"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func RequirePermission(db *gorm.DB, permission []string) gin.HandlerFunc {
+func RequirePermission(db *gorm.DB, permission []string, isObject bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRoleId, exist := c.Get("role_id")
 		if !exist {
@@ -30,6 +31,11 @@ func RequirePermission(db *gorm.DB, permission []string) gin.HandlerFunc {
 			return
 		}
 		valid := true
+		if isObject {
+			objectName := c.Param("object")
+			methodName := c.Request.Method
+			permission = append(permission, fmt.Sprintf("%s.%s", objectName, methodName))
+		}
 		for _, perm := range permission {
 			valid = valid && slices.Contains(role.Permission, perm)
 		}
