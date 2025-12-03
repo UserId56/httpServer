@@ -18,6 +18,41 @@ func SchemeHelperGetByName(db *gorm.DB, schemeName string) (*models.DynamicSchem
 	return &scheme, nil
 }
 
+func formatUsingAndDefault(column *models.DynamicColumns, dataType string) (usingExpr string, defaultExpr string, err error) {
+	if column.DefaultValue == "" {
+		return "NULL", "NULL", nil // USING NULL для существующих значений, DROP DEFAULT будет сформирован отдельно
+	}
+	switch column.DataType {
+	case "TEXT", "TIMESTAMP", "DATE", "JSON":
+		escaped := strings.ReplaceAll(column.DefaultValue, "'", "''")
+		using := fmt.Sprintf("'%s'::%s", escaped, dataType)
+		return using, using, nil
+	case "BOOLEAN":
+		val := strings.ToLower(column.DefaultValue)
+		if val != "true" && val != "false" {
+			val = "false"
+		}
+		using := fmt.Sprintf("%s::%s", val, dataType)
+		return using, using, nil
+	case "INT", "BIGINT", "ref":
+		isInt, e := strconv.ParseInt(column.DefaultValue, 10, 64)
+		if e != nil {
+			return "", "", fmt.Errorf("не верный тип данных DEFAULT для %s: %s", column.DataType, column.DefaultValue)
+		}
+		using := fmt.Sprintf("%d::%s", isInt, dataType)
+		return using, using, nil
+	case "FLOAT", "MONEY":
+		isFloat, e := strconv.ParseFloat(column.DefaultValue, 64)
+		if e != nil {
+			return "", "", fmt.Errorf("не верный тип данных DEFAULT для %s: %s", column.DataType, column.DefaultValue)
+		}
+		using := fmt.Sprintf("%f::%s", isFloat, dataType)
+		return using, using, nil
+	default:
+		return "", "", fmt.Errorf("не поддерживаемый тип %s", column.DataType)
+	}
+}
+
 func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentScheme *models.DynamicScheme) (string, []*models.DynamicColumns, []*models.DynamicColumns, error) {
 	var newColumns []*models.DynamicColumns
 	var oldColumns []*models.DynamicColumns
@@ -28,6 +63,9 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 	isUpdate := false
 	var resultSQL string
 	for _, column := range columnsUpdate {
+		if column.ColumnName == "id" || column.ColumnName == "created_at" || column.ColumnName == "updated_at" || column.ColumnName == "deleted_at" {
+			continue
+		}
 		if column.ID == 0 {
 			column.DynamicTableID = currentScheme.ID
 			newColumns = append(newColumns, column)
@@ -41,7 +79,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				}
 				if column.DataType != currentCol.DataType {
 					validate := validator.New()
-					err := validate.Var(column.DataType, "oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON ref")
+					err := validate.Var(column.DataType, "oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON FLOAT MONEY ref")
 					if err != nil {
 						return "", nil, nil, fmt.Errorf("не верный тип данных %s", column.DataType)
 					}
@@ -56,7 +94,17 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, currentCol.ReferencedScheme, currentCol.ColumnName))
 						column.ReferencedScheme = ""
 					}
-					SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE %s USING \"%s\"::%s, ", column.ColumnName, dataType, column.ColumnName, dataType)
+					if column.DataType == "FLOAT" {
+						dataType = "DOUBLE PRECISION"
+					}
+					if column.DataType == "MONEY" {
+						dataType = "NUMERIC(19,4)"
+					}
+					usingExpr, defaultExpr, err := formatUsingAndDefault(column, dataType)
+					if err != nil {
+						return "", nil, nil, err
+					}
+					SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE %s USING %s, ALTER COLUMN \"%s\" SET DEFAULT %s, ", column.ColumnName, dataType, usingExpr, column.ColumnName, defaultExpr)
 				}
 				if column.DefaultValue != currentCol.DefaultValue {
 					if column.DefaultValue != "" {
@@ -69,6 +117,13 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 								return "", nil, nil, fmt.Errorf("не верный тип данных DEFAULT для типа %s: %s", column.DataType, column.DefaultValue)
 							}
 							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT %d, ", column.ColumnName, isInt)
+						case "FLOAT", "MONEY":
+							isFloat, err := strconv.ParseFloat(column.DefaultValue, 64)
+							if err != nil {
+								return "", nil, nil, fmt.Errorf("не верный тип данных DEFAULT для типа %s: %s", column.DataType, column.DefaultValue)
+							}
+							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT %f, ", column.ColumnName, isFloat)
+
 						default:
 							return "", nil, nil, fmt.Errorf("не верный тип данных %s", column.DataType)
 						}
@@ -120,7 +175,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				break
 			}
 		}
-		if !found {
+		if !found && currentCol.ColumnName != "id" && currentCol.ColumnName != "created_at" && currentCol.ColumnName != "updated_at" && currentCol.ColumnName != "deleted_at" {
 			deleteColumns = append(deleteColumns, currentCol)
 			SQLAlert += fmt.Sprintf("DROP COLUMN \"%s\", ", currentCol.ColumnName)
 		}
@@ -154,7 +209,14 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 		if col.DataType == "ref" && col.ReferencedScheme != "" {
 			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, "INT")
 		} else {
-			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, col.DataType)
+			dataType := col.DataType
+			if col.DataType == "FLOAT" {
+				dataType = "DOUBLE PRECISION"
+			}
+			if col.DataType == "MONEY" {
+				dataType = "NUMERIC(19,4)"
+			}
+			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, dataType)
 		}
 		if col.DefaultValue != "" {
 			switch col.DataType {
@@ -166,6 +228,12 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 					return "", false, fmt.Errorf("не верный тип данных дефолтного значения для типа %s: %s", col.DataType, col.DefaultValue)
 				}
 				colString += fmt.Sprintf(" DEFAULT %d", isInt)
+			case "FLOAT", "MONEY":
+				isFloat, err := strconv.ParseFloat(col.DefaultValue, 64)
+				if err != nil {
+					return "", false, fmt.Errorf("не верный тип данных дефолтного значения для типа %s: %s", col.DataType, col.DefaultValue)
+				}
+				colString += fmt.Sprintf(" DEFAULT %f", isFloat)
 			case "BOOLEAN":
 				colString += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
 			case "TIMESTAMP", "DATE":

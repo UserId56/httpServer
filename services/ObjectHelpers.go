@@ -39,7 +39,7 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 			if key == field.ColumnName {
 				searchField = true
 				switch field.DataType {
-				case "INT", "BIGINT", "ref":
+				case "INT", "BIGINT", "ref", "FLOAT", "MONEY":
 					_, ok := value.(float64)
 					if !ok {
 						return fmt.Errorf("поле %s имеет неверный тип данных", key)
