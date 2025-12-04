@@ -53,3 +53,5 @@ require (
 	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/gorm v1.31.1 // indirect
 )
+
+replace github.com/UserId56/httpServer/core => ./core
