@@ -3,8 +3,8 @@ package database
 import (
 	"errors"
 	"fmt"
-	"httpServer/logger"
-	"httpServer/models"
+	"github.com/UserId56/httpServer/core/logger"
+	"github.com/UserId56/httpServer/core/models"
 	"log"
 	"os"
 	"time"

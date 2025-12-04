@@ -3,7 +3,7 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"httpServer/models"
+	"github.com/UserId56/httpServer/core/models"
 	"slices"
 	"strings"
 

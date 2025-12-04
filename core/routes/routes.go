@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"httpServer/controllers"
-	"httpServer/middleware"
+	"github.com/UserId56/httpServer/core/controllers"
+	"github.com/UserId56/httpServer/core/middleware"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

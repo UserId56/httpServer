@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"httpServer/models"
-	"httpServer/services"
+	"github.com/UserId56/httpServer/core/models"
+	"github.com/UserId56/httpServer/core/services"
 	"strings"
 
 	"github.com/gin-gonic/gin"
