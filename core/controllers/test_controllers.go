@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"httpServer/logger"
-	"httpServer/models"
-	"httpServer/services"
+	"github.com/UserId56/httpServer/core/logger"
+	"github.com/UserId56/httpServer/core/models"
+	"github.com/UserId56/httpServer/core/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

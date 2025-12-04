@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"errors"
-	"httpServer/logger"
-	"httpServer/models"
-	"httpServer/services"
+	"github.com/UserId56/httpServer/core/logger"
+	"github.com/UserId56/httpServer/core/models"
+	"github.com/UserId56/httpServer/core/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

@@ -2,7 +2,7 @@ package services
 
 import (
 	"fmt"
-	"httpServer/models"
+	"github.com/UserId56/httpServer/core/models"
 	"os"
 	"strconv"
 	"time"

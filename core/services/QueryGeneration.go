@@ -3,7 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"httpServer/models"
+	"github.com/UserId56/httpServer/core/models"
 	"strconv"
 )
 
