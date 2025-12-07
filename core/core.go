@@ -32,8 +32,9 @@ func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup) {
 	r := gin.Default()
 	routes.SetupRouter(r, DB)
 	PluginAPI := make(map[string]interface{})
+	pluginCtx, pluginCancel := context.WithCancel(context.Background())
 	for _, plugin := range plugins {
-		err := plugin.PluginInit(r, DB, &PluginAPI, wg)
+		err := plugin.PluginInit(r, DB, &PluginAPI, wg, pluginCtx)
 		if err != nil {
 			logger.Log(err, "Ошибка при инициализации плагина", logger.Error)
 		}
@@ -51,6 +52,7 @@ func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
+	pluginCancel()
 	logger.Log(nil, "Получен сигнал завершения, выполняется graceful shutdown", logger.Info)
 
 	// Контекст с таймаутом для завершения текущих запросов

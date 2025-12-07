@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"context"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -8,5 +9,5 @@ import (
 )
 
 type Plugin interface {
-	PluginInit(engine *gin.Engine, db *gorm.DB, pluginsData *map[string]interface{}, group *sync.WaitGroup) error
+	PluginInit(engine *gin.Engine, db *gorm.DB, pluginsData *map[string]interface{}, wg *sync.WaitGroup, ctx context.Context) error
 }
