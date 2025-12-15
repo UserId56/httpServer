@@ -13,10 +13,13 @@ import (
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/plugins"
 	"github.com/UserId56/httpServer/core/routes"
+	"github.com/UserId56/httpServer/core/services"
 	"github.com/gin-gonic/gin"
 )
 
 func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup) {
+	services.RegisterValidators()
+
 	DB, err := database.Connect()
 	if err != nil {
 		logger.Log(err, "Ошибка при подключении к базе данных", logger.Error)
