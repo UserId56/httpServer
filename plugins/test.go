@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -19,7 +20,7 @@ func (p *PluginTest) testHandler(c *gin.Context) {
 	})
 }
 
-func (p *PluginTest) PluginInit(r *gin.Engine, db *gorm.DB, pluginsData *map[string]interface{}, wg *sync.WaitGroup) error {
+func (p *PluginTest) PluginInit(r *gin.Engine, db *gorm.DB, pluginsData *map[string]interface{}, wg *sync.WaitGroup, ctx context.Context) error {
 	r.GET(p.Path, p.testHandler)
 	wg.Add(1)
 	go func() {
