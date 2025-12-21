@@ -3,11 +3,12 @@ package database
 import (
 	"errors"
 	"fmt"
-	"github.com/UserId56/httpServer/core/logger"
-	"github.com/UserId56/httpServer/core/models"
 	"log"
 	"os"
 	"time"
+
+	"github.com/UserId56/httpServer/core/logger"
+	"github.com/UserId56/httpServer/core/models"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
@@ -123,12 +124,18 @@ func Connect() (*gorm.DB, error) {
 		os.Getenv("SERVER_DB_NAME"),     // имя_базы_данных
 		os.Getenv("SERVER_DB_PORT"),     // порт_pg (по умолчанию 5432)
 	)
-	fmt.Println(dsn)
+	//fmt.Println(dsn)
+	var logLevel gormLogger.LogLevel
+	if os.Getenv("DEBUG") == "TRUE" {
+		logLevel = gormLogger.Info
+	} else {
+		logLevel = gormLogger.Error
+	}
 	newLogger := gormLogger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // Выводим в stdout
 		gormLogger.Config{
 			SlowThreshold: time.Millisecond,
-			LogLevel:      gormLogger.Info, // <--- Установите Level на Info
+			LogLevel:      logLevel, // <--- Установите Level на Info
 			Colorful:      true,
 		},
 	)
