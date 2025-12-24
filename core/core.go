@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,13 +12,14 @@ import (
 
 	"github.com/UserId56/httpServer/core/database"
 	"github.com/UserId56/httpServer/core/logger"
+	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/plugins"
 	"github.com/UserId56/httpServer/core/routes"
 	"github.com/UserId56/httpServer/core/services"
 	"github.com/gin-gonic/gin"
 )
 
-func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup) {
+func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config) {
 	services.RegisterValidators()
 
 	DB, err := database.Connect()
@@ -30,8 +32,18 @@ func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup) {
 		logger.Log(err, "Ошибка при получении экземпляра базы данных", logger.Error)
 		return
 	}
-	sqlDB.SetMaxIdleConns(50)
-	sqlDB.SetMaxOpenConns(250)
+	conf.Init()
+	fmt.Printf("Сервер запущен c параметрами: %+v\n", conf)
+	sqlDB.SetMaxIdleConns(conf.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(conf.MaxOpenConns)
+	// 1. Ограничиваем общую жизнь соединения.
+	// Даже если всё идеально, раз в 30 минут полезно создать чистое соединение.
+	sqlDB.SetConnMaxLifetime(time.Duration(conf.ConnMaxLifetime) * time.Minute)
+
+	// 2. Ограничиваем время простоя.
+	// Если соединение просто лежит в пуле 5 минут без дела — закрываем его.
+	// Это освободит память (RAM) на стороне Postgres-процессов.
+	sqlDB.SetConnMaxIdleTime(time.Duration(conf.ConnMaxIdleTime) * time.Minute)
 	r := gin.Default()
 	routes.SetupRouter(r, DB)
 	PluginAPI := make(map[string]interface{})
@@ -42,8 +54,9 @@ func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup) {
 			logger.Log(err, "Ошибка при инициализации плагина", logger.Error)
 		}
 	}
+	addr := fmt.Sprintf("%s:%d", conf.Address, conf.Port)
 	srv := &http.Server{
-		Addr:    ":3000",
+		Addr:    addr,
 		Handler: r,
 	}
 	go func() {

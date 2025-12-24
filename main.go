@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/UserId56/httpServer/core"
+	"github.com/UserId56/httpServer/core/models"
 	plugins2 "github.com/UserId56/httpServer/core/plugins"
 )
 
@@ -15,5 +16,13 @@ func main() {
 	}
 	wg := &sync.WaitGroup{}
 	InitPlugins := []plugins2.Plugin{&testPlugin}
-	core.ServerInit(InitPlugins, wg)
+	config := models.Config{
+		Address:         "",
+		Port:            3001,
+		MaxIdleConns:    10,
+		MaxOpenConns:    100,
+		ConnMaxLifetime: 30,
+		ConnMaxIdleTime: 10,
+	}
+	core.ServerInit(InitPlugins, wg, config)
 }
