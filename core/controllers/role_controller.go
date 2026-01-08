@@ -8,6 +8,7 @@ import (
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
+	"gorm.io/gorm/clause"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -56,7 +57,7 @@ func (rc RoleController) RoleCreate(c *gin.Context) {
 		Permission: roleInput.Permission,
 	}
 
-	if err := rc.DB.Create(&role).Error; err != nil {
+	if err := rc.DB.Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Create(&role).Error; err != nil {
 		if errors.As(err, &gorm.ErrDuplicatedKey) {
 			c.JSON(400, gin.H{"error": "Роль с таким именем уже существует"})
 			return
@@ -64,7 +65,7 @@ func (rc RoleController) RoleCreate(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	c.JSON(200, role)
+	c.JSON(200, gin.H{"id": role.ID})
 }
 
 func (rc RoleController) RoleUpdateByID(c *gin.Context) {
