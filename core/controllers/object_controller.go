@@ -8,6 +8,7 @@ import (
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
+	"gorm.io/gorm/clause"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -54,12 +55,12 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
 		return
 	}
-	if err := o.DB.Table(objectName).Create(&obj).Error; err != nil {
+	if err := o.DB.Table(objectName).Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Create(&obj).Error; err != nil {
 		logger.Log(err, "Ошибка создания элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	c.Status(201)
+	c.JSON(201, gin.H{"id": obj["id"]})
 }
 
 func (o *ObjectController) ObjectGetByID(c *gin.Context) {
