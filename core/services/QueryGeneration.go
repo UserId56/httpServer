@@ -112,19 +112,38 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 					}
 					switch field.DataType {
 					case "INT", "BIGINT", "ref":
-						isInt, err := strconv.ParseInt(fmt.Sprintf("%v", dataWhereParamField.Value), 10, 64)
-						if err != nil {
-							return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
+						if dataWhereParamField.Value != nil {
+							isInt, err := strconv.ParseInt(fmt.Sprintf("%v", dataWhereParamField.Value), 10, 64)
+							if err != nil {
+								return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
+							}
+							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+							arg = append(arg, isInt)
+						} else {
+							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
 						}
-						result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-						arg = append(arg, isInt)
+					case "FLOAT", "DOUBLE":
+						if dataWhereParamField.Value != nil {
+							isFloat, err := strconv.ParseFloat(fmt.Sprintf("%v", dataWhereParamField.Value), 64)
+							if err != nil {
+								return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается FLOAT", dataWhereParamField.Field)
+							}
+							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+							arg = append(arg, isFloat)
+						} else {
+							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
+						}
 					case "BOOLEAN":
-						isBool, ok := dataWhereParamField.Value.(bool)
-						if !ok {
-							return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается BOOLEAN", dataWhereParamField.Field)
+						if dataWhereParamField.Value != nil {
+							isBool, ok := dataWhereParamField.Value.(bool)
+							if !ok {
+								return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается BOOLEAN", dataWhereParamField.Field)
+							}
+							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+							arg = append(arg, isBool)
+						} else {
+							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
 						}
-						result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-						arg = append(arg, isBool)
 					case "TIMESTAMP", "DATE":
 						if dataWhereParamField.Value != nil {
 							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
@@ -133,8 +152,12 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
 						}
 					case "TEXT", "JSON":
-						result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-						arg = append(arg, fmt.Sprintf("%v", dataWhereParamField.Value))
+						if dataWhereParamField.Value != nil {
+							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+							arg = append(arg, fmt.Sprintf("%v", dataWhereParamField.Value))
+						} else {
+							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
+						}
 					default:
 						return "", nil, fmt.Errorf("неизвестный тип данных поля %s: %s", value.(models.WhereParamField).Field, field.DataType)
 					}
