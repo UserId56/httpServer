@@ -41,6 +41,12 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 				searchField = true
 				switch field.DataType {
 				case "INT", "BIGINT", "ref", "FLOAT", "MONEY":
+					if value == nil {
+						if field.NotNull != nil && *field.NotNull {
+							return fmt.Errorf("поле %s не может быть пустым", key)
+						}
+						break
+					}
 					_, ok := value.(float64)
 					if !ok {
 						return fmt.Errorf("поле %s имеет неверный тип данных", key)
@@ -62,6 +68,12 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 					}
 					break
 				case "BOOLEAN":
+					if value == nil {
+						if field.NotNull != nil && *field.NotNull {
+							return fmt.Errorf("поле %s не может быть пустым", key)
+						}
+						break
+					}
 					_, ok := value.(bool)
 					if !ok {
 						return fmt.Errorf("поле %s имеет неверный тип данных", key)
