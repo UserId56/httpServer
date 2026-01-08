@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"errors"
+	"strconv"
+
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -170,7 +171,7 @@ func (uc *UserController) UserLogin(c *gin.Context) {
 		RoleID:       user.RoleID,
 	}
 
-	c.JSON(200, gin.H{"user": userResponse})
+	c.JSON(200, userResponse)
 }
 
 func (uc *UserController) UserGetMyProfile(c *gin.Context) {
@@ -182,7 +183,7 @@ func (uc *UserController) UserGetMyProfile(c *gin.Context) {
 			c.JSON(404, gin.H{"error": "Пользователь не найден"})
 			return
 		}
-		c.JSON(200, gin.H{"user": user})
+		c.JSON(200, user)
 	} else {
 		c.JSON(401, gin.H{"error": "Не авторизован"})
 	}
@@ -200,7 +201,7 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "Пользователь не найден"})
 		return
 	}
-	c.JSON(200, gin.H{"user": user})
+	c.JSON(200, user)
 }
 
 func (uc *UserController) UserUpdateByID(c *gin.Context) {
@@ -357,5 +358,5 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	c.JSON(200, gin.H{"users": users})
+	c.JSON(200, users)
 }

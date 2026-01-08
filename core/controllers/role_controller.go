@@ -3,10 +3,11 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
+
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -181,5 +182,5 @@ func (rc RoleController) RoleQuery(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка выполнения запроса"})
 		return
 	}
-	c.JSON(200, gin.H{"roles": roles})
+	c.JSON(200, roles)
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+
 	"github.com/UserId56/httpServer/core/models"
 )
 
@@ -46,6 +47,12 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 					}
 					break
 				case "TEXT", "JSON", "DATE", "TIMESTAMP":
+					if value == nil {
+						if field.NotNull != nil && *field.NotNull {
+							return fmt.Errorf("поле %s не может быть пустым", key)
+						}
+						break
+					}
 					str, ok := value.(string)
 					if !ok {
 						return fmt.Errorf("поле %s имеет неверный тип данных", key)

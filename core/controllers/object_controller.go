@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"errors"
+	"strconv"
+	"time"
+
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -112,6 +114,7 @@ func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
 		return
 	}
+	obj["updated_at"] = time.Now()
 	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Updates(obj).Error; err != nil {
 		logger.Log(err, "Ошибка обновления элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
@@ -150,7 +153,11 @@ func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Элемент успешно удален окончательно"})
 		return
 	}
-	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Delete(&Element).Error; err != nil {
+	now := time.Now()
+	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).UpdateColumns(map[string]interface{}{
+		"deleted_at": now,
+		"updated_at": now,
+	}).Error; err != nil {
 		logger.Log(err, "Ошибка удаления элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return

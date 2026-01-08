@@ -3,8 +3,9 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/UserId56/httpServer/core/models"
 	"strconv"
+
+	"github.com/UserId56/httpServer/core/models"
 )
 
 func getOperator(operator string) (string, error) {
@@ -26,13 +27,17 @@ func getOperator(operator string) (string, error) {
 	case "notin":
 		return "NOT IN", nil
 	case "null":
-		return "IS NULL", nil
+		return "IS", nil
 	case "notNull":
-		return "IS NOT NULL", nil
+		return "IS NOT", nil
 
 	default:
 		return "", fmt.Errorf("неизвестный оператор: %s", operator)
 	}
+}
+
+func getSrtWhere() {
+
 }
 
 func OrderGeneration(listOrder []models.Order, fields []models.DynamicColumns) (string, error) {
@@ -62,7 +67,7 @@ func OrderGeneration(listOrder []models.Order, fields []models.DynamicColumns) (
 			return "", fmt.Errorf("поле для сортировки %s не найдено в схеме", order.Field)
 		}
 		switch order.Direction {
-		case "ASC", "DESC":
+		case "asc", "desc":
 			if index == 0 {
 				result += fmt.Sprintf(`"%s" %s`, order.Field, order.Direction)
 			} else {
@@ -121,8 +126,12 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 						result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
 						arg = append(arg, isBool)
 					case "TIMESTAMP", "DATE":
-						result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-						arg = append(arg, dataWhereParamField.Value)
+						if dataWhereParamField.Value != nil {
+							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+							arg = append(arg, dataWhereParamField.Value)
+						} else {
+							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
+						}
 					case "TEXT", "JSON":
 						result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
 						arg = append(arg, fmt.Sprintf("%v", dataWhereParamField.Value))

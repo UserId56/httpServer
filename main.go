@@ -18,7 +18,7 @@ func main() {
 	InitPlugins := []plugins2.Plugin{&testPlugin}
 	config := models.Config{
 		Address:         "",
-		Port:            3001,
+		Port:            3000,
 		MaxIdleConns:    10,
 		MaxOpenConns:    100,
 		ConnMaxLifetime: 30,

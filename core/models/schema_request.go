@@ -16,7 +16,7 @@ type ColumnDefinition struct {
 }
 
 type CreateSchemeRequest struct {
-	Name        string             `json:"table_name" binding:"required,identifier,min=2,max=64"`
+	Name        string             `json:"name" binding:"required,identifier,min=2,max=64"`
 	DisplayName string             `json:"display_name" binding:"required,min=2,max=128"`
 	Columns     []ColumnDefinition `json:"columns" binding:"required,min=1"`
 }

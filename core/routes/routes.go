@@ -13,13 +13,14 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 	//r.POST("/register", appController.User.UserRegistration)
 	r.GET("/test", appController.Test.TestGetList)
 	r.POST("/test", appController.Test.TestCreate)
-	r.POST("/user/register", appController.User.UserRegistration)
-	r.POST("/user/login", appController.User.UserLogin)
-	private := r.Group("/")
+	r.POST("api/v1/user/register", appController.User.UserRegistration)
+	r.POST("api/v1/user/login", appController.User.UserLogin)
+	private := r.Group("/api")
+	v1 := private.Group("/v1")
 	{
-		private.Use(middleware.Auth(db))
+		v1.Use(middleware.Auth(db))
 		//USER METHODS
-		user := private.Group("/user")
+		user := v1.Group("/user")
 		{
 			user.GET("/profile", appController.User.UserGetMyProfile)
 			user.GET("/:id", middleware.RequirePermission(db, []string{"user.GET"}, false), appController.User.UserGetByID)
@@ -28,7 +29,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			user.POST("/query", middleware.RequirePermission(db, []string{"user.GET"}, false), appController.User.UserQuery)
 		}
 		//ROLE METHODS
-		role := private.Group("/role")
+		role := v1.Group("/role")
 		{
 			role.GET("/:id", middleware.RequirePermission(db, []string{"role.GET"}, false), appController.Role.RoleGetByID)
 			role.POST("/", middleware.RequirePermission(db, []string{"role.POST"}, false), appController.Role.RoleCreate)
@@ -37,7 +38,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			role.POST("/query", middleware.RequirePermission(db, []string{"role.GET"}, false), appController.Role.RoleQuery)
 		}
 		//	SCHEME METHODS
-		scheme := private.Group("/scheme")
+		scheme := v1.Group("/scheme")
 		{
 			scheme.POST("/", middleware.RequirePermission(db, []string{"scheme.POST"}, false), appController.Scheme.SchemeCreate)
 			scheme.GET("/:name", middleware.RequirePermission(db, []string{"scheme.GET"}, false), appController.Scheme.SchemeGetByName)
@@ -45,7 +46,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			scheme.PUT("/:name", middleware.RequirePermission(db, []string{"scheme.PUT"}, false), appController.Scheme.SchemeUpdateByName)
 			scheme.DELETE("/:name", middleware.RequirePermission(db, []string{"scheme.DELETE"}, false), appController.Scheme.SchemeDelete)
 		}
-		object := private.Group("/:object")
+		object := v1.Group("/object/:object")
 		{
 			object.POST("/", middleware.RequirePermission(db, []string{}, true), appController.Object.ObjectCreate)
 			object.GET("/:id", middleware.RequirePermission(db, []string{}, true), appController.Object.ObjectGetByID)
