@@ -52,7 +52,6 @@ func (rc RoleController) RoleCreate(c *gin.Context) {
 	}
 
 	role := models.Role{
-		Model:      gorm.Model{},
 		Name:       roleInput.Name,
 		Permission: roleInput.Permission,
 	}

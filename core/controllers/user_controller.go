@@ -38,7 +38,6 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 	}
 
 	user := models.User{
-		Model:    gorm.Model{},
 		Username: userInput.Username,
 		Email:    userInput.Email,
 		Password: string(hashPassword),
@@ -87,7 +86,6 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 		return
 	}
 	refreshToken := models.RefreshToken{
-		Model:  gorm.Model{},
 		UserID: user.ID,
 		Token:  uuid.NewString(),
 	}
@@ -118,7 +116,7 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 		RoleID:       user.RoleID,
 	}
 
-	c.JSON(200, gin.H{"user": userResponse})
+	c.JSON(200, userResponse)
 }
 
 func (uc *UserController) UserLogin(c *gin.Context) {
@@ -146,7 +144,6 @@ func (uc *UserController) UserLogin(c *gin.Context) {
 	}
 
 	refreshToken := models.RefreshToken{
-		Model:  gorm.Model{},
 		UserID: user.ID,
 		Token:  uuid.NewString(),
 	}
