@@ -1,12 +1,18 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 type DynamicColumns struct {
-	gorm.Model
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+
 	DynamicTableID   uint           `gorm:"not null;uniqueIndex:idx_table_column;d" json:"dynamic_table_id"`
 	ColumnName       string         `gorm:"type:text;not null;uniqueIndex:idx_table_column" json:"column_name"`
 	DisplayName      string         `gorm:"type:text;not null" json:"display_name"`
@@ -19,7 +25,11 @@ type DynamicColumns struct {
 }
 
 type DynamicScheme struct {
-	gorm.Model
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+
 	Name        string            `gorm:"type:text;not null;uniqueIndex" json:"name"`
 	DisplayName string            `gorm:"type:text;not null" json:"display_name"`
 	Columns     []*DynamicColumns `gorm:"foreignKey:DynamicTableID;constraint:OnDelete:CASCADE;" json:"columns"`
