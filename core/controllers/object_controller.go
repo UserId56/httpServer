@@ -221,5 +221,8 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
+	if (results == nil) || (len(results) == 0) {
+		results = make([]map[string]interface{}, 0)
+	}
 	c.JSON(200, results)
 }

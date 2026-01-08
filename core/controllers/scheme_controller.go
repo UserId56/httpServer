@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -150,6 +151,9 @@ func (tc *SchemeController) SchemeGetLst(c *gin.Context) {
 		logger.Log(err, "Ошибка получения списка таблиц", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
+	}
+	if schemes == nil {
+		schemes = make([]models.DynamicScheme, 0)
 	}
 	c.JSON(200, schemes)
 }
