@@ -182,5 +182,8 @@ func (rc RoleController) RoleQuery(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка выполнения запроса"})
 		return
 	}
+	if roles == nil {
+		roles = make([]models.Role, 0)
+	}
 	c.JSON(200, roles)
 }

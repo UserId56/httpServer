@@ -355,5 +355,8 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
+	if users == nil {
+		users = make([]map[string]interface{}, 0)
+	}
 	c.JSON(200, users)
 }
