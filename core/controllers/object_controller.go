@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/UserId56/httpServer/core/logger"
@@ -188,6 +189,25 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 	var results []map[string]interface{}
 	if len(Query.Include) == 0 {
 		Query.Include = services.GenInclude(fields)
+	}
+	userPermissions, exists := c.Get("role_permissions")
+	if !exists {
+		logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	for _, field := range userPermissions.([]string) {
+		if strings.Contains(field, "forbidden") {
+			strArray := strings.Split(field, ".")
+			for _, qField := range Query.Include {
+				qField = strings.Trim(qField, "\"")
+				if qField == strArray[1] {
+					// NOTE: Если право есть в правах роли, то ему НЕЛЬЗЯ делать действие
+					c.JSON(403, gin.H{"error": "Недостаточно прав для получения поля: " + qField})
+					return
+				}
+			}
+		}
 	}
 	dbQuery := o.DB.Table(object).Select(Query.Include)
 	if whereSQL != "" {

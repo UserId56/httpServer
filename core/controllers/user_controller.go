@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
@@ -193,12 +195,38 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Неверный ID пользователя"})
 		return
 	}
-	var user models.UserGetResponse
+	var user models.User
 	if err := uc.DB.Model(&models.User{}).Where("id = ?", id).First(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(404, gin.H{"error": "Пользователь не найден"})
 		return
 	}
-	c.JSON(200, user)
+	user.Password = ""
+	userRoleId, exist := c.Get("role_id")
+	if !exist {
+		c.JSON(403, gin.H{"error": "Роль не указана"})
+		c.Abort()
+		return
+	}
+	currentUserIdAuth, existsId := c.Get("user_id")
+	currentUserId, err := strconv.ParseUint(fmt.Sprintf("%v", currentUserIdAuth), 10, 64)
+	if err != nil {
+		logger.Log(err, "Ошибка преобразования user_id из контекста", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	if !existsId {
+		c.JSON(401, gin.H{"error": "Не авторизован"})
+		return
+	}
+
+	fmt.Printf("%d %d\n", user.ID, currentUserId)
+	if userRoleId.(float64) == 1 || uint64(user.ID) == currentUserId {
+		c.JSON(200, user)
+		return
+	}
+	var userReq models.UserGetResponse
+	userReq = *models.NewUserGetResponseFromUser(&user)
+	c.JSON(200, userReq)
 }
 
 func (uc *UserController) UserUpdateByID(c *gin.Context) {
@@ -321,7 +349,26 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 	}
 	var users []map[string]interface{}
 	if len(Query.Include) == 0 {
-		Query.Include = []string{"created_at", "updated_at", "id", "username", "email", "avatar", "bio", "role_id"}
+		Query.Include = []string{"created_at", "updated_at", "id", "username", "avatar", "bio"}
+	} else {
+		userPermissions, exists := c.Get("role_permissions")
+		if !exists {
+			logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		for _, field := range userPermissions.([]string) {
+			if strings.Contains(field, "forbidden") {
+				strArray := strings.Split(field, ".")
+				for _, qField := range Query.Include {
+					if qField == strArray[1] {
+						// NOTE: Если право есть в правах роли, то ему НЕЛЬЗЯ делать действие
+						c.JSON(403, gin.H{"error": "Недостаточно прав для получения поля: " + qField})
+						return
+					}
+				}
+			}
+		}
 	}
 	dbQuery := uc.DB.Model(&models.User{}).Select(Query.Include)
 	if whereSQL != "" {

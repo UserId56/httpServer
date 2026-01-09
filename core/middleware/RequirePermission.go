@@ -3,9 +3,10 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"github.com/UserId56/httpServer/core/models"
 	"slices"
 	"strings"
+
+	"github.com/UserId56/httpServer/core/models"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -45,6 +46,7 @@ func RequirePermission(db *gorm.DB, permission []string, isObject bool) gin.Hand
 			c.Abort()
 			return
 		}
+		c.Set("role_permissions", role.Permission)
 		c.Next()
 	}
 

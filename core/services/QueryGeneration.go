@@ -36,10 +36,6 @@ func getOperator(operator string) (string, error) {
 	}
 }
 
-func getSrtWhere() {
-
-}
-
 func OrderGeneration(listOrder []models.Order, fields []models.DynamicColumns) (string, error) {
 	if len(listOrder) == 0 {
 		return "", nil
@@ -101,7 +97,7 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 		}
 		err = json.Unmarshal(jsonData, &dataWhereParamField)
 		if err == nil && dataWhereParamField.Field != "" {
-			fmt.Println(dataWhereParamField)
+			//fmt.Println(dataWhereParamField)
 			fieldFound := false
 			for _, field := range fields {
 				if field.ColumnName == dataWhereParamField.Field {
@@ -179,7 +175,7 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 		var dataAndWhere models.AndWhere
 		//dataAndWhere, ok := value.(models.AndWhere)
 		err = json.Unmarshal(jsonData, &dataAndWhere)
-		fmt.Println(dataAndWhere)
+		//fmt.Println(dataAndWhere)
 		if err == nil && dataAndWhere.And != nil {
 			subResult, subArg, err := WhereGeneration(dataAndWhere.And, fields, "AND")
 			if err != nil {
