@@ -9,6 +9,7 @@ import (
 	"github.com/UserId56/httpServer/core/logger"
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/UserId56/httpServer/core/services"
+	"gorm.io/gorm/clause"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -406,4 +407,45 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 		users = make([]map[string]interface{}, 0)
 	}
 	c.JSON(200, users)
+}
+
+func (uc *UserController) UserCreate(c *gin.Context) {
+	var userData models.User
+	if err := c.ShouldBindJSON(&userData); err != nil {
+		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
+		return
+	}
+
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(userData.Password), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Log(err, "Ошибка хеширования пароля", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	userData.Password = string(hashPassword)
+	var pgErr *pgconn.PgError
+	if err := uc.DB.Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Create(&userData).Error; err != nil {
+		if errors.As(err, &pgErr) {
+			switch pgErr.ConstraintName {
+			case "fk_users_role":
+				c.JSON(400, gin.H{"error": "Указанная роль не существует"})
+				return
+			case "uni_users_username", "uni_users_email":
+				// Пользователь с таким email или username уже существует
+				c.JSON(400, gin.H{"error": "Пользователь с таким именем или email уже существует"})
+				return
+			default:
+				// Неизвестная ошибка базы данных
+				logger.Log(err, "Ошибка создания пользователя", logger.Error)
+				c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+				return
+
+			}
+		}
+		logger.Log(err, "Ошибка создания пользователя", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+
+	c.JSON(201, gin.H{"id": userData.ID})
 }

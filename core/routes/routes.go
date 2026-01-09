@@ -27,6 +27,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			user.DELETE("/:id", middleware.RequirePermission(db, []string{"user.DELETE"}, false), appController.User.UserDeleteByID)
 			user.PUT("/:id", middleware.RequirePermission(db, []string{"user.PUT"}, false), appController.User.UserUpdateByID)
 			user.POST("/query", middleware.RequirePermission(db, []string{"user.GET"}, false), appController.User.UserQuery)
+			user.POST("/", middleware.RequirePermission(db, []string{"user.POST"}, false), appController.User.UserCreate)
 		}
 		//ROLE METHODS
 		role := v1.Group("/role")
