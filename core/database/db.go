@@ -81,12 +81,16 @@ func seedDefaultData(db *gorm.DB) error {
 			}
 		}
 		userDynamicColumns := []models.DynamicColumns{
-			{ColumnName: "username", DataType: "TEXT", DynamicTableID: usersScheme.ID},
-			{ColumnName: "email", DataType: "TEXT", DynamicTableID: usersScheme.ID},
-			{ColumnName: "password", DataType: "TEXT", DynamicTableID: usersScheme.ID},
-			{ColumnName: "role_id", DataType: "ref", ReferencedScheme: "roles", DynamicTableID: usersScheme.ID},
-			{ColumnName: "avatar", DataType: "TEXT", DynamicTableID: usersScheme.ID},
-			{ColumnName: "bio", DataType: "TEXT", DynamicTableID: usersScheme.ID},
+			{ColumnName: "id", DataType: "SERIAL", DynamicTableID: usersScheme.ID, DisplayName: "ID"},
+			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата создания"},
+			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата обновления"},
+			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата удаления"},
+			{ColumnName: "username", DataType: "TEXT", DynamicTableID: usersScheme.ID, DisplayName: "Имя пользователя"},
+			{ColumnName: "email", DataType: "TEXT", DynamicTableID: usersScheme.ID, DisplayName: "email"},
+			{ColumnName: "password", DataType: "TEXT", DynamicTableID: usersScheme.ID, DisplayName: "Пароль"},
+			{ColumnName: "role_id", DataType: "ref", ReferencedScheme: "roles", DynamicTableID: usersScheme.ID, DisplayName: "Роль"},
+			{ColumnName: "avatar", DataType: "TEXT", DynamicTableID: usersScheme.ID, DisplayName: "Аватар"},
+			{ColumnName: "bio", DataType: "TEXT", DynamicTableID: usersScheme.ID, DisplayName: "Биография"},
 		}
 		for _, col := range userDynamicColumns {
 			var existingCol models.DynamicColumns
@@ -99,8 +103,12 @@ func seedDefaultData(db *gorm.DB) error {
 			}
 		}
 		roleDynamicColumns := []models.DynamicColumns{
-			{ColumnName: "name", DataType: "TEXT", DynamicTableID: rolesScheme.ID},
-			{ColumnName: "permission", DataType: "JSONB", DynamicTableID: rolesScheme.ID},
+			{ColumnName: "id", DataType: "SERIAL", DynamicTableID: rolesScheme.ID, DisplayName: "ID"},
+			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата создания"},
+			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата обновления"},
+			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата удаления"},
+			{ColumnName: "name", DataType: "TEXT", DynamicTableID: rolesScheme.ID, DisplayName: "Имя роли"},
+			{ColumnName: "permission", DataType: "JSONB", DynamicTableID: rolesScheme.ID, DisplayName: "Права доступа"},
 		}
 		for _, col := range roleDynamicColumns {
 			var existingCol models.DynamicColumns

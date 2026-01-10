@@ -190,7 +190,7 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 	if len(Query.Include) == 0 {
 		Query.Include = services.GenInclude(fields)
 	}
-	userPermissions, exists := c.Get("role_permissions")
+	userPermissions, exists := c.Get("permission")
 	if !exists {
 		logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})

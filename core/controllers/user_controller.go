@@ -352,7 +352,7 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 	if len(Query.Include) == 0 {
 		Query.Include = []string{"created_at", "updated_at", "id", "username", "avatar", "bio"}
 	} else {
-		userPermissions, exists := c.Get("role_permissions")
+		userPermissions, exists := c.Get("permission")
 		if !exists {
 			logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
 			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
@@ -371,10 +371,18 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 			}
 		}
 	}
-	dbQuery := uc.DB.Model(&models.User{}).Select(Query.Include)
+	includes := make([]string, 0)
+	for _, include := range Query.Include {
+		if include == "password" {
+			continue
+		}
+		includes = append(includes, fmt.Sprintf("\"%s\"", include))
+	}
+	dbQuery := uc.DB.Model(&models.User{}).Select(includes)
 	if whereSQL != "" {
 		dbQuery = dbQuery.Where(whereSQL, args...)
 	}
+	fmt.Printf("%v\n", Query.Count)
 	if Query.Count {
 		var count int64
 		if err := dbQuery.Count(&count).Error; err != nil {
@@ -382,6 +390,7 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 			return
 		}
+		fmt.Printf("SUKA EBANAYA A: %d\n", count)
 		c.Header("X-Total-Count", strconv.FormatInt(count, 10))
 	}
 	if Query.Take > 0 {
