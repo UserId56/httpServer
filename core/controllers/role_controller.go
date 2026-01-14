@@ -177,6 +177,14 @@ func (rc RoleController) RoleQuery(c *gin.Context) {
 		queryBuilder = queryBuilder.Order(orderStr)
 
 	}
+	if Query.Count {
+		var count int64
+		if err := queryBuilder.Count(&count).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Ошибка подсчета записей"})
+			return
+		}
+		c.Header("X-Total-Count", strconv.FormatInt(count, 10))
+	}
 	if err := queryBuilder.Find(&roles).Error; err != nil {
 		logger.Log(err, "Ошибка получения роли", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка выполнения запроса"})
