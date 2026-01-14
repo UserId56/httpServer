@@ -7,7 +7,7 @@ import (
 type ColumnDefinition struct {
 	ColumnName       string         `json:"column_name" binding:"required,identifier,min=2,max=64"`
 	DisplayName      string         `json:"display_name" binding:"required,min=2,max=128"`
-	DataType         string         `json:"data_type" binding:"required,oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON, ref"`
+	DataType         string         `json:"data_type" binding:"required,oneof=TEXT STRING INT BIGINT BOOLEAN TIMESTAMP DATE JSON, ref"`
 	ReferencedScheme string         `json:"referenced_scheme,omitempty"`
 	IsMultiple       *bool          `json:"is_multiple"`
 	IsUnique         *bool          `json:"is_unique"`
@@ -30,7 +30,7 @@ func ptrBool(data bool) *bool {
 func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme {
 	var columns []*DynamicColumns
 	var defaultColumns = []*DynamicColumns{
-		{ColumnName: "id", DisplayName: "ID", DataType: "INT", NotNull: ptrBool(true), IsUnique: ptrBool(true)},
+		{ColumnName: "id", DisplayName: "ID", DataType: "BIGINT", NotNull: ptrBool(true), IsUnique: ptrBool(true)},
 		{ColumnName: "created_at", DisplayName: "Дата создания", DataType: "TIMESTAMP", NotNull: ptrBool(true), DefaultValue: "NOW"},
 		{ColumnName: "updated_at", DisplayName: "Дата изменения", DataType: "TIMESTAMP", NotNull: ptrBool(true), DefaultValue: "NOW"},
 		{ColumnName: "deleted_at", DisplayName: "Дата удаления", DataType: "TIMESTAMP"},
