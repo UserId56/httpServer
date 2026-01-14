@@ -66,7 +66,7 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 						return fmt.Errorf("поле %s имеет неверный тип данных", key)
 					}
 					break
-				case "TEXT", "JSON", "DATE", "TIMESTAMP":
+				case "TEXT", "STRING", "JSON", "DATE", "TIMESTAMP":
 					if value == nil {
 						if field.NotNull != nil && *field.NotNull {
 							return fmt.Errorf("поле %s не может быть пустым", key)

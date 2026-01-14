@@ -80,7 +80,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				}
 				if column.DataType != currentCol.DataType {
 					validate := validator.New()
-					err := validate.Var(column.DataType, "oneof=TEXT INT BIGINT BOOLEAN TIMESTAMP DATE JSON FLOAT MONEY ref")
+					err := validate.Var(column.DataType, "oneof=TEXT STRING INT BIGINT BOOLEAN TIMESTAMP DATE JSON FLOAT MONEY ref")
 					if err != nil {
 						return "", nil, nil, fmt.Errorf("не верный тип данных %s", column.DataType)
 					}
@@ -104,6 +104,9 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 					if column.DataType == "MONEY" {
 						dataType = "NUMERIC(19,4)"
 					}
+					if column.DataType == "STRING" {
+						dataType = "TEXT"
+					}
 					usingExpr, defaultExpr, err := formatUsingAndDefault(column, dataType)
 					if err != nil {
 						return "", nil, nil, err
@@ -113,7 +116,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				if column.DefaultValue != currentCol.DefaultValue {
 					if column.DefaultValue != "" {
 						switch column.DataType {
-						case "TEXT", "TIMESTAMP", "DATE", "JSON":
+						case "TEXT", "STRING", "TIMESTAMP", "DATE", "JSON":
 							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT '%s', ", column.ColumnName, column.DefaultValue)
 						case "INT", "BIGINT", "BOOLEAN", "ref":
 							isInt, err := strconv.ParseInt(column.DefaultValue, 10, 64)
@@ -230,11 +233,14 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			if col.DataType == "MONEY" {
 				dataType = "NUMERIC(19,4)"
 			}
+			if col.DataType == "STRING" {
+				dataType = "TEXT"
+			}
 			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, dataType)
 		}
 		if col.DefaultValue != "" {
 			switch col.DataType {
-			case "TEXT":
+			case "TEXT", "STRING":
 				colString += fmt.Sprintf(" DEFAULT '%s'", col.DefaultValue)
 			case "INT", "BIGINT":
 				isInt, err := strconv.ParseInt(col.DefaultValue, 10, 64)
