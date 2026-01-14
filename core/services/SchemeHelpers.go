@@ -2,9 +2,10 @@ package services
 
 import (
 	"fmt"
-	"github.com/UserId56/httpServer/core/models"
 	"strconv"
 	"strings"
+
+	"github.com/UserId56/httpServer/core/models"
 
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
@@ -198,7 +199,7 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 	var cols []string
 	var colRef []string
 	if !isAdd {
-		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`)
+		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`, `"owner_id" INT`)
 	}
 	for _, col := range req.Columns {
 		var colString string

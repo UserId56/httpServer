@@ -57,6 +57,12 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
 		return
 	}
+	userId, exist := c.Get("user_id")
+	if !exist {
+		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
+		return
+	}
+	obj["owner_id"] = uint(userId.(float64))
 	if err := o.DB.Table(objectName).Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Create(&obj).Error; err != nil {
 		logger.Log(err, "Ошибка создания элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
@@ -118,6 +124,10 @@ func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
 		return
 	}
 	obj["updated_at"] = time.Now()
+	_, exist := obj["owner_id"]
+	if exist {
+		delete(obj, "owner_id")
+	}
 	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Updates(obj).Error; err != nil {
 		logger.Log(err, "Ошибка обновления элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
