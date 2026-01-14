@@ -85,7 +85,7 @@ func seedDefaultData(db *gorm.DB) error {
 			}
 		}
 		userDynamicColumns := []models.DynamicColumns{
-			{ColumnName: "id", DataType: "SERIAL", DynamicTableID: usersScheme.ID, DisplayName: "ID"},
+			{ColumnName: "id", DataType: "BIGINT", DynamicTableID: usersScheme.ID, DisplayName: "ID"},
 			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата создания"},
 			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата обновления"},
 			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата удаления"},
@@ -107,7 +107,7 @@ func seedDefaultData(db *gorm.DB) error {
 			}
 		}
 		roleDynamicColumns := []models.DynamicColumns{
-			{ColumnName: "id", DataType: "SERIAL", DynamicTableID: rolesScheme.ID, DisplayName: "ID"},
+			{ColumnName: "id", DataType: "BIGINT", DynamicTableID: rolesScheme.ID, DisplayName: "ID"},
 			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата создания"},
 			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата обновления"},
 			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата удаления"},

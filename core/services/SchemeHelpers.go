@@ -64,7 +64,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 	isUpdate := false
 	var resultSQL string
 	for _, column := range columnsUpdate {
-		if column.ColumnName == "id" || column.ColumnName == "created_at" || column.ColumnName == "updated_at" || column.ColumnName == "deleted_at" {
+		if column.ColumnName == "id" || column.ColumnName == "created_at" || column.ColumnName == "updated_at" || column.ColumnName == "deleted_at" || column.ColumnName == "owner_id" {
 			continue
 		}
 		if column.ID == 0 {
@@ -87,14 +87,17 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 					var dataType string
 					if column.DataType == "ref" && column.ReferencedScheme != "" {
 						dataType = "INT"
+						if column.IsMultiple != nil && *column.IsMultiple {
+							dataType = "INT[]"
+						}
 					} else {
 						dataType = column.DataType
 					}
 					//Пустая ссылка если меняется тип данных
-					if column.DataType != "ref" && currentCol.DataType == "ref" {
-						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, currentCol.ReferencedScheme, currentCol.ColumnName))
-						column.ReferencedScheme = ""
-					}
+					//if column.DataType != "ref" && currentCol.DataType == "ref" {
+					//	SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, currentCol.ReferencedScheme, currentCol.ColumnName))
+					//	column.ReferencedScheme = ""
+					//}
 					if column.DataType == "FLOAT" {
 						dataType = "DOUBLE PRECISION"
 					}
@@ -149,17 +152,23 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 					column.IsUnique = &boolFalse
 					SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", unNameOld)
 				}
-
-				if column.DataType == "ref" && column.ReferencedScheme != currentCol.ReferencedScheme {
-					if currentCol.DataType == "ref" && currentCol.ReferencedScheme != "" {
-						// Drop existing foreign key constraint
-						SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, column.ReferencedScheme, currentCol.ColumnName))
+				if column.DataType == "ref" && *column.IsMultiple != *currentCol.IsMultiple {
+					if column.IsMultiple != nil && *column.IsMultiple {
+						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE BIGINT[] USING ARRAY[\"%s\"]::BIGINT[], ", column.ColumnName, column.ColumnName)
+					} else {
+						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE INT USING (CASE WHEN cardinality(\"%s\") >= 1 THEN (\"%s\")[1] ELSE NULL END), ", column.ColumnName, column.ColumnName, column.ColumnName)
 					}
+				}
+				if column.DataType == "ref" && column.ReferencedScheme != currentCol.ReferencedScheme {
+					//if currentCol.DataType == "ref" && currentCol.ReferencedScheme != "" {
+					//	// Drop existing foreign key constraint
+					//	SQLAlert += fmt.Sprintf("DROP CONSTRAINT IF EXISTS \"%s\", ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, column.ReferencedScheme, currentCol.ColumnName))
+					//}
 					if column.ReferencedScheme != "" {
 						// Add new foreign key constraint
-						SQLUpdate += fmt.Sprintf("SET \"%s\" = NULL WHERE \"%s\" NOT IN (SELECT ID FROM \"%s\") AND \"%s\" IS NOT NULL, ", column.ColumnName, column.ColumnName, column.ReferencedScheme, column.ColumnName)
+						SQLUpdate += fmt.Sprintf("SET \"%s\" = NULL, ", column.ColumnName)
 						isUpdate = true
-						SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (ID) ON DELETE SET NULL NOT VALID, ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, column.ReferencedScheme, column.ColumnName), column.ColumnName, column.ReferencedScheme)
+						//SQLAlert += fmt.Sprintf("ADD CONSTRAINT \"%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (ID) ON DELETE SET NULL NOT VALID, ", fmt.Sprintf("fk_%s_%s_%s", currentScheme.Name, column.ReferencedScheme, column.ColumnName), column.ColumnName, column.ReferencedScheme)
 					} else {
 						return "", nil, nil, fmt.Errorf("пустая ссылка на коллекцию")
 					}
@@ -176,7 +185,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				break
 			}
 		}
-		if !found && currentCol.ColumnName != "id" && currentCol.ColumnName != "created_at" && currentCol.ColumnName != "updated_at" && currentCol.ColumnName != "deleted_at" {
+		if !found && currentCol.ColumnName != "id" && currentCol.ColumnName != "created_at" && currentCol.ColumnName != "updated_at" && currentCol.ColumnName != "deleted_at" && currentCol.ColumnName != "owner_id" {
 			deleteColumns = append(deleteColumns, currentCol)
 			SQLAlert += fmt.Sprintf("DROP COLUMN \"%s\", ", currentCol.ColumnName)
 		}
@@ -199,7 +208,7 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 	var cols []string
 	var colRef []string
 	if !isAdd {
-		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`, `"owner_id" INT`)
+		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`, `"owner_id" BIGINT`)
 	}
 	for _, col := range req.Columns {
 		var colString string
@@ -208,7 +217,11 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			updateStr = "ADD COLUMN "
 		}
 		if col.DataType == "ref" && col.ReferencedScheme != "" {
-			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, "INT")
+			typeRef := "BIGINT"
+			if col.IsMultiple != nil && *col.IsMultiple {
+				typeRef = "BIGINT[]"
+			}
+			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, typeRef)
 		} else {
 			dataType := col.DataType
 			if col.DataType == "FLOAT" {
@@ -256,13 +269,13 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			unName := fmt.Sprintf("uniq_%s_%s", req.Name, col.ColumnName)
 			colString += fmt.Sprintf(" CONSTRAINT \"%s\" UNIQUE", unName)
 		}
-		if col.DataType == "ref" {
-			if col.ReferencedScheme != "" {
-				colRef = append(colRef, fmt.Sprintf(`CONSTRAINT "%s" FOREIGN KEY ("%s") REFERENCES "%s" (ID) ON DELETE SET NULL`, fmt.Sprintf("fk_%s_%s_%s", req.Name, col.ReferencedScheme, col.ColumnName), col.ColumnName, col.ReferencedScheme))
-			} else {
-				return "", false, fmt.Errorf("пустая ссылка на коллекцию")
-			}
-		}
+		//if col.DataType == "ref" {
+		//	if col.ReferencedScheme != "" {
+		//		colRef = append(colRef, fmt.Sprintf(`CONSTRAINT "%s" FOREIGN KEY ("%s") REFERENCES "%s" (ID) ON DELETE SET NULL`, fmt.Sprintf("fk_%s_%s_%s", req.Name, col.ReferencedScheme, col.ColumnName), col.ColumnName, col.ReferencedScheme))
+		//	} else {
+		//		return "", false, fmt.Errorf("пустая ссылка на коллекцию")
+		//	}
+		//}
 		cols = append(cols, colString)
 	}
 	cols = append(cols, colRef...)

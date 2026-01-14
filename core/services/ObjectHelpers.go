@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/UserId56/httpServer/core/models"
+	"github.com/lib/pq"
 )
 
 func GenInclude(fields []models.DynamicColumns) []string {
@@ -44,6 +45,19 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 					if value == nil {
 						if field.NotNull != nil && *field.NotNull {
 							return fmt.Errorf("поле %s не может быть пустым", key)
+						}
+						break
+					}
+					if field.IsMultiple != nil && *field.IsMultiple {
+						arr, ok := value.([]interface{})
+						if !ok {
+							return fmt.Errorf("поле %s имеет неверный тип данных", key)
+						}
+						for _, v := range arr {
+							_, ok := v.(float64)
+							if !ok {
+								return fmt.Errorf("поле %s имеет неверный тип данных", key)
+							}
 						}
 						break
 					}
@@ -103,4 +117,25 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 		}
 	}
 	return nil
+}
+
+func ParsIntField(fields []models.DynamicColumns, obj map[string]interface{}) map[string]interface{} {
+	var result = obj
+	for _, field := range fields {
+		if field.DataType == "ref" && field.IsMultiple != nil && *field.IsMultiple {
+			if val, ok := obj[field.ColumnName]; ok {
+				var intResult []int64
+				arr, ok := val.([]interface{})
+				if ok {
+					for _, v := range arr {
+						if num, ok := v.(float64); ok {
+							intResult = append(intResult, int64(num))
+						}
+					}
+				}
+				result[field.ColumnName] = pq.Array(intResult)
+			}
+		}
+	}
+	return result
 }
