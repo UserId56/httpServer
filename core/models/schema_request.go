@@ -18,6 +18,7 @@ type ColumnDefinition struct {
 type CreateSchemeRequest struct {
 	Name        string             `json:"name" binding:"required,identifier,min=2,max=64"`
 	DisplayName string             `json:"display_name" binding:"required,min=2,max=128"`
+	ViewData    *ViewData          `json:"view_data"`
 	Columns     []ColumnDefinition `json:"columns" binding:"required,min=1"`
 }
 
@@ -25,7 +26,7 @@ func ptrBool(data bool) *bool {
 	return &data
 }
 
-func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
+func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme {
 	var columns []*DynamicColumns
 	var defaultColumns = []*DynamicColumns{
 		{ColumnName: "id", DisplayName: "ID", DataType: "INT", NotNull: ptrBool(true), IsUnique: ptrBool(true)},
@@ -34,6 +35,11 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 		{ColumnName: "deleted_at", DisplayName: "Дата удаления", DataType: "TIMESTAMP"},
 	}
 	columns = append(columns, defaultColumns...)
+	var viewDataExists = ctr.ViewData != nil
+	if !viewDataExists {
+		ctr.ViewData = &ViewData{}
+		ctr.ViewData.ShortView = "{id}"
+	}
 	for _, colDef := range ctr.Columns {
 		var refScheme string
 		if colDef.DataType != "ref" {
@@ -53,9 +59,34 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable() *DynamicScheme {
 		}
 		columns = append(columns, column)
 	}
+	for index, column := range columns {
+		if !viewDataExists {
+			var isFilterable bool
+			if column.ColumnName != "id" || column.DataType != "BOOLEAN" || column.DataType != "JSON" {
+				isFilterable = true
+			}
+			filedOptions := FieldOptions{
+				Name:       column.ColumnName,
+				Hidden:     false,
+				Filterable: isFilterable,
+				Order:      index + 1,
+			}
+			ctr.ViewData.FieldOptions = append(ctr.ViewData.FieldOptions, filedOptions)
+		}
+	}
+	var ownerIdColumn = &DynamicColumns{
+		ColumnName:  "owner_id",
+		DisplayName: "Автор",
+		DataType:    "INT",
+		NotNull:     ptrBool(false),
+		IsUnique:    ptrBool(false),
+	}
+	columns = append(columns, ownerIdColumn)
 	return &DynamicScheme{
 		Name:        ctr.Name,
 		DisplayName: ctr.DisplayName,
+		ViewData:    ctr.ViewData,
 		Columns:     columns,
+		OwnerID:     &ownerId,
 	}
 }

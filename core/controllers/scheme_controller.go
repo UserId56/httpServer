@@ -52,7 +52,13 @@ func (tc *SchemeController) SchemeCreate(c *gin.Context) {
 		tx.Rollback()
 		return
 	}
-	dynamicTable := req.CreateDynamicTable()
+	userId, exist := c.Get("user_id")
+	if !exist {
+		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
+		tx.Rollback()
+		return
+	}
+	dynamicTable := req.CreateDynamicTable(uint(userId.(float64)))
 	//Проверяем ссылки на другие таблицы
 	if err := services.CheckRefTables(dynamicTable.Columns, tx); err != nil {
 		logger.Log(err, "Ошибка проверки ссылок на другие таблицы", logger.Error)

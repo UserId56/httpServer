@@ -27,7 +27,7 @@ func CheckTableName(nameTable string) bool {
 func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.DynamicColumns, create bool) error {
 	for _, field := range tableFields {
 		if create {
-			if field.ColumnName == "id" || field.ColumnName == "created_at" || field.ColumnName == "updated_at" || field.ColumnName == "deleted_at" {
+			if field.ColumnName == "id" || field.ColumnName == "created_at" || field.ColumnName == "updated_at" || field.ColumnName == "deleted_at" || field.ColumnName == "owner_id" {
 				continue
 			}
 		} else {

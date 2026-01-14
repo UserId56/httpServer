@@ -16,6 +16,8 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
+var UserAdmin uint = 1
+
 func seedDefaultData(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, roleName := range []string{"admin", "user"} {
@@ -64,6 +66,7 @@ func seedDefaultData(db *gorm.DB) error {
 			usersScheme = models.DynamicScheme{
 				Name:        "users",
 				DisplayName: "Пользователи",
+				OwnerID:     &UserAdmin,
 			}
 			if err := tx.Create(&usersScheme).Error; err != nil {
 				return err
@@ -75,6 +78,7 @@ func seedDefaultData(db *gorm.DB) error {
 			rolesScheme = models.DynamicScheme{
 				Name:        "roles",
 				DisplayName: "Роли",
+				OwnerID:     &UserAdmin,
 			}
 			if err := tx.Create(&rolesScheme).Error; err != nil {
 				return err
