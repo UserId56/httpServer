@@ -141,6 +141,7 @@ func (tc *SchemeController) SchemeGetByName(c *gin.Context) {
 func (tc *SchemeController) SchemeGetLst(c *gin.Context) {
 	take := c.DefaultQuery("take", "10")
 	skip := c.DefaultQuery("skip", "0")
+	count := c.DefaultQuery("count", "false")
 
 	takeInt, err := strconv.Atoi(take)
 	if err != nil || takeInt <= 0 {
@@ -152,15 +153,31 @@ func (tc *SchemeController) SchemeGetLst(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Параметр 'skip' должен быть неотрицательным целым числом"})
 		return
 	}
-	var schemes []models.DynamicScheme
-	if err := tc.DB.Limit(takeInt).Offset(skipInt).Find(&schemes).Error; err != nil {
-		logger.Log(err, "Ошибка получения списка таблиц", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+	countBool, err := strconv.ParseBool(count)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Параметр 'count' должен быть булевым значением"})
 		return
 	}
-	if schemes == nil {
-		schemes = make([]models.DynamicScheme, 0)
+	var schemes []models.DynamicScheme
+	if countBool {
+		var totalCount int64
+		if err := tc.DB.Limit(takeInt).Offset(skipInt).Find(&schemes).Count(&totalCount).Error; err != nil {
+			logger.Log(err, "Ошибка подсчета количества таблиц", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		c.Header("X-Total-Count", strconv.FormatInt(totalCount, 10))
+	} else {
+		if err := tc.DB.Limit(takeInt).Offset(skipInt).Find(&schemes).Error; err != nil {
+			logger.Log(err, "Ошибка получения списка таблиц", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		if schemes == nil {
+			schemes = make([]models.DynamicScheme, 0)
+		}
 	}
+
 	c.JSON(200, schemes)
 }
 
