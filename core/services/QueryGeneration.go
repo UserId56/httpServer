@@ -36,6 +36,25 @@ func getOperator(operator string) (string, error) {
 	}
 }
 
+//"where": [
+//        {
+//            "or": [
+//                {
+//                    "field": "deleted_at",
+//                    "operator": "notNull"
+//                },
+//                {
+//                    "field": "id",
+//                    "operator": "eq",
+//                    "value": "2"
+//                }
+//            ]
+//        },
+//        {
+//            "query": "bor"
+//        }
+//    ]
+
 func OrderGeneration(listOrder []models.Order, fields []models.DynamicColumns) (string, error) {
 	if len(listOrder) == 0 {
 		return "", nil
@@ -198,6 +217,47 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 				return "", nil, err
 			}
 			arg = append(arg, subArg...)
+			if index < len(dataWhere)-1 {
+				result += subResult + " " + operator + " "
+			} else {
+				result += subResult + " )"
+			}
+			continue
+		}
+		var dataSearch models.Search
+		err = json.Unmarshal(jsonData, &dataSearch)
+		//fmt.Printf("%+v\n", dataSearch)
+		//fmt.Printf("%+v\n", dataSearch.Fields != nil)
+		//fmt.Printf("%+v\n", dataSearch.Query != "")
+		//fmt.Printf("%+v\n", err)
+		if err == nil && dataSearch.Query != "" {
+			subResult := "( "
+			if len(dataSearch.Fields) == 0 {
+				for _, field := range fields {
+					if field.DataType == "TEXT" || field.DataType == "STRING" {
+						dataSearch.Fields = append(dataSearch.Fields, field.ColumnName)
+					}
+				}
+			}
+			for fIndex, fieldName := range dataSearch.Fields {
+				fieldFound := false
+				for _, field := range fields {
+					if field.ColumnName == fieldName {
+						fieldFound = true
+						subResult += fmt.Sprintf(`"%s" ILIKE ?`, fieldName)
+						arg = append(arg, "%"+dataSearch.Query+"%")
+						if fIndex < len(dataSearch.Fields)-1 {
+							subResult += " OR "
+						} else {
+							subResult += " )"
+						}
+						break
+					}
+				}
+				if !fieldFound {
+					return "", nil, fmt.Errorf("поле для поиска %s не найдено в схеме", fieldName)
+				}
+			}
 			if index < len(dataWhere)-1 {
 				result += subResult + " " + operator + " "
 			} else {

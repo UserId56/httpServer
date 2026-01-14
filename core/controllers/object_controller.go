@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -181,6 +182,7 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 		return
 	}
 	whereSQL, args, err := services.WhereGeneration(Query.Where, fields, "AND")
+	fmt.Println(whereSQL)
 	if err != nil {
 		logger.Log(err, "Ошибка генерации условия", logger.Error)
 		c.JSON(400, gin.H{"error": "Ошибка генерации условия: " + err.Error()})
@@ -189,6 +191,8 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 	var results []map[string]interface{}
 	if len(Query.Include) == 0 {
 		Query.Include = services.GenInclude(fields)
+	} else {
+		Query.IncludeBox()
 	}
 	userPermissions, exists := c.Get("permission")
 	if !exists {

@@ -19,6 +19,11 @@ type Order struct {
 	Direction string `json:"direction" binding:"required,oneof=asc desc"`
 }
 
+type Search struct {
+	Fields []string `json:"fields" binding:"required"`
+	Query  string   `json:"query" binding:"required"`
+}
+
 type Query struct {
 	Include []string      `json:"include,omitempty"`
 	Where   []interface{} `json:"where,omitempty"`
@@ -26,4 +31,10 @@ type Query struct {
 	Take    int           `json:"take,omitempty"`
 	Skip    int           `json:"skip,omitempty"`
 	Count   bool          `json:"count,omitempty"`
+}
+
+func (q *Query) IncludeBox() {
+	for i, field := range q.Include {
+		q.Include[i] = "\"" + field + "\""
+	}
 }

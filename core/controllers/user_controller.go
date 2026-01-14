@@ -421,6 +421,7 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 func (uc *UserController) UserCreate(c *gin.Context) {
 	var userData models.User
 	if err := c.ShouldBindJSON(&userData); err != nil {
+		fmt.Printf("%v\n", err)
 		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
 		return
 	}
