@@ -63,6 +63,8 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 		return
 	}
 	obj["owner_id"] = uint(userId.(float64))
+	// Чекаем множественные значения в полях ref и конвертируем их в []int
+	obj = services.ParsIntField(fields, obj)
 	if err := o.DB.Table(objectName).Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Create(&obj).Error; err != nil {
 		logger.Log(err, "Ошибка создания элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
