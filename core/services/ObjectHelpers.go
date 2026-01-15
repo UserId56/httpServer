@@ -2,6 +2,8 @@ package services
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/lib/pq"
@@ -135,6 +137,31 @@ func ParsIntField(fields []models.DynamicColumns, obj map[string]interface{}) ma
 				}
 				result[field.ColumnName] = pq.Array(intResult)
 			}
+		}
+	}
+	return result
+}
+
+func ExtractInt64Slice(fields []models.DynamicColumns, obj map[string]interface{}) map[string]interface{} {
+	result := obj
+	for _, field := range fields {
+		if field.DataType == "ref" && field.IsMultiple != nil && *field.IsMultiple {
+			val, ok := obj[field.ColumnName]
+			if ok {
+				val = strings.Trim(val.(string), "{}")
+				if val == "" {
+					obj[field.ColumnName] = []int64{}
+				}
+
+				// Делим по запятой и конвертируем
+				parts := strings.Split(val.(string), ",")
+				parsArr := make([]int64, len(parts))
+				for i, p := range parts {
+					parsArr[i], _ = strconv.ParseInt(p, 10, 64)
+				}
+				obj[field.ColumnName] = parsArr
+			}
+
 		}
 	}
 	return result

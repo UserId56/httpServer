@@ -90,6 +90,13 @@ func (o *ObjectController) ObjectGetByID(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
+	var fields []models.DynamicColumns
+	if err := o.DB.Model(&models.DynamicColumns{}).Where("dynamic_table_id = (SELECT id FROM dynamic_schemes WHERE name = ?)", ObjectID).Find(&fields).Error; err != nil {
+		logger.Log(err, "Ошибка получения полей для объекта "+ObjectID, logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	result = services.ExtractInt64Slice(fields, result)
 	c.JSON(200, result)
 }
 
@@ -130,6 +137,7 @@ func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
 	if exist {
 		delete(obj, "owner_id")
 	}
+	obj = services.ParsIntField(fields, obj)
 	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Updates(obj).Error; err != nil {
 		logger.Log(err, "Ошибка обновления элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
@@ -259,6 +267,9 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 	}
 	if (results == nil) || (len(results) == 0) {
 		results = make([]map[string]interface{}, 0)
+	}
+	for i, res := range results {
+		results[i] = services.ExtractInt64Slice(fields, res)
 	}
 	c.JSON(200, results)
 }
