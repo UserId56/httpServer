@@ -128,12 +128,30 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 					switch field.DataType {
 					case "INT", "BIGINT", "ref":
 						if dataWhereParamField.Value != nil {
-							isInt, err := strconv.ParseInt(fmt.Sprintf("%v", dataWhereParamField.Value), 10, 64)
-							if err != nil {
-								return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
+							arr, ok := dataWhereParamField.Value.([]interface{})
+							if !ok {
+								isInt, err := strconv.ParseInt(fmt.Sprintf("%v", dataWhereParamField.Value), 10, 64)
+								if err != nil {
+									return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
+								}
+								result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+								arg = append(arg, isInt)
+							} else {
+								result += fmt.Sprintf(`"%s" %s (`, dataWhereParamField.Field, operatorField)
+								fmt.Printf("%v\n", arr)
+								for indexValue, v := range arr {
+									isInt, err := strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
+									if err != nil {
+										return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
+									}
+									arg = append(arg, isInt)
+									result += "?"
+									if indexValue < len(arr)-1 {
+										result += ", "
+									}
+								}
+								result += `)`
 							}
-							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-							arg = append(arg, isInt)
 						} else {
 							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
 						}
@@ -265,6 +283,11 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 			}
 			continue
 		}
+		//var dataInQuery models.InQuery
+		//err = json.Unmarshal(jsonData, &dataInQuery)
+		//if err == nil && dataInQuery.Field != "" && dataInQuery.NameReturn != "" && dataInQuery.Fields != nil {
+		//
+		//}
 		return "", nil, fmt.Errorf("неизвестный тип условия в where")
 	}
 	return result, arg, nil

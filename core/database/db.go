@@ -66,7 +66,23 @@ func seedDefaultData(db *gorm.DB) error {
 			usersScheme = models.DynamicScheme{
 				Name:        "users",
 				DisplayName: "Пользователи",
-				OwnerID:     &UserAdmin,
+				ViewData: &models.ViewData{
+					ShortView: "{username}",
+					HideMenu:  false,
+					FieldOptions: []models.FieldOptions{
+						{Name: "id", Hidden: false, Filterable: false, Order: 1},
+						{Name: "created_at", Hidden: false, Filterable: true, Order: 2},
+						{Name: "updated_at", Hidden: false, Filterable: true, Order: 3},
+						{Name: "deleted_at", Hidden: true, Filterable: false, Order: 4},
+						{Name: "username", Hidden: false, Filterable: true, Order: 5},
+						{Name: "email", Hidden: false, Filterable: true, Order: 6},
+						{Name: "password", Hidden: true, Filterable: false, Order: 7},
+						{Name: "role_id", Hidden: false, Filterable: true, Order: 8},
+						{Name: "avatar", Hidden: false, Filterable: false, Order: 9},
+						{Name: "bio", Hidden: false, Filterable: false, Order: 10},
+					},
+				},
+				OwnerID: &UserAdmin,
 			}
 			if err := tx.Create(&usersScheme).Error; err != nil {
 				return err
@@ -78,7 +94,19 @@ func seedDefaultData(db *gorm.DB) error {
 			rolesScheme = models.DynamicScheme{
 				Name:        "roles",
 				DisplayName: "Роли",
-				OwnerID:     &UserAdmin,
+				ViewData: &models.ViewData{
+					ShortView: "{name}",
+					HideMenu:  false,
+					FieldOptions: []models.FieldOptions{
+						{Name: "id", Hidden: false, Filterable: false, Order: 1},
+						{Name: "created_at", Hidden: false, Filterable: true, Order: 2},
+						{Name: "updated_at", Hidden: false, Filterable: true, Order: 3},
+						{Name: "deleted_at", Hidden: true, Filterable: false, Order: 4},
+						{Name: "name", Hidden: false, Filterable: true, Order: 5},
+						{Name: "permission", Hidden: false, Filterable: false, Order: 6},
+					},
+				},
+				OwnerID: &UserAdmin,
 			}
 			if err := tx.Create(&rolesScheme).Error; err != nil {
 				return err

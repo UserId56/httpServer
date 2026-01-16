@@ -191,6 +191,10 @@ func (o *ObjectController) ObjectDeleteByID(c *gin.Context) {
 func (o *ObjectController) ObjectQuery(c *gin.Context) {
 	var Query models.Query
 	object := c.Param("object")
+	if services.CheckTableName(object) {
+		c.JSON(404, gin.H{"error": "Таблица не найдена"})
+		return
+	}
 	if err := c.ShouldBindJSON(&Query); err != nil {
 		c.JSON(400, gin.H{"error": "Не верные данные"})
 		return

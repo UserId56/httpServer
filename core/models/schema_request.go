@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	"gorm.io/datatypes"
 )
 
@@ -42,6 +44,9 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme 
 		ctr.ViewData.ShortView = "{id}"
 	}
 	for _, colDef := range ctr.Columns {
+		if colDef.ColumnName == "title" || colDef.ColumnName == "name" {
+			ctr.ViewData.ShortView = fmt.Sprintf("{%s}", colDef.ColumnName)
+		}
 		var refScheme string
 		if colDef.DataType != "ref" {
 			refScheme = ""
@@ -77,11 +82,13 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme 
 		}
 	}
 	var ownerIdColumn = &DynamicColumns{
-		ColumnName:  "owner_id",
-		DisplayName: "Автор",
-		DataType:    "INT",
-		NotNull:     ptrBool(false),
-		IsUnique:    ptrBool(false),
+		ColumnName:       "owner_id",
+		DisplayName:      "Автор",
+		DataType:         "ref",
+		ReferencedScheme: "users",
+		IsMultiple:       ptrBool(false),
+		NotNull:          ptrBool(false),
+		IsUnique:         ptrBool(false),
 	}
 	columns = append(columns, ownerIdColumn)
 	return &DynamicScheme{
