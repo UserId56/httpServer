@@ -295,9 +295,12 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 	return sql, false, nil
 }
 
-func CheckRefTables(columns []*models.DynamicColumns, db *gorm.DB) error {
+func CheckRefTables(columns []*models.DynamicColumns, db *gorm.DB, currentTableName string) error {
 	for _, col := range columns {
 		if col.DataType == "ref" {
+			if col.ReferencedScheme == currentTableName {
+				continue
+			}
 			var count int64
 			if err := db.Model(&models.DynamicScheme{}).Where("name = ?", col.ReferencedScheme).Count(&count).Error; err != nil {
 				return fmt.Errorf("ошибка проверки ссылки на таблицу %s: %v", col.ReferencedScheme, err)

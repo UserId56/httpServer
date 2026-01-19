@@ -60,7 +60,7 @@ func (tc *SchemeController) SchemeCreate(c *gin.Context) {
 	}
 	dynamicTable := req.CreateDynamicTable(uint(userId.(float64)))
 	//Проверяем ссылки на другие таблицы
-	if err := services.CheckRefTables(dynamicTable.Columns, tx); err != nil {
+	if err := services.CheckRefTables(dynamicTable.Columns, tx, dynamicTable.Name); err != nil {
 		logger.Log(err, "Ошибка проверки ссылок на другие таблицы", logger.Error)
 		c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
 		tx.Rollback()
@@ -223,7 +223,7 @@ func (tc *SchemeController) SchemeUpdateByName(c *gin.Context) {
 			return
 		}
 		//Проверяем ссылки на другие таблицы
-		if err = services.CheckRefTables(req.Columns, tx); err != nil {
+		if err = services.CheckRefTables(req.Columns, tx, req.Name); err != nil {
 			logger.Log(err, "Ошибка проверки ссылок на другие таблицы", logger.Error)
 			c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
 			tx.Rollback()
