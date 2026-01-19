@@ -30,6 +30,8 @@ func getOperator(operator string) (string, error) {
 		return "IS", nil
 	case "notNull":
 		return "IS NOT", nil
+	case "iLike":
+		return "ILIKE", nil
 
 	default:
 		return "", fmt.Errorf("неизвестный оператор: %s", operator)
@@ -184,15 +186,19 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 						} else {
 							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
 						}
-					case "TEXT", "JSON":
+					case "TEXT", "JSON", "STRING":
 						if dataWhereParamField.Value != nil {
-							result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-							arg = append(arg, fmt.Sprintf("%v", dataWhereParamField.Value))
+							if operatorField == "ILIKE" {
+								result += fmt.Sprintf(`"%s" %s '%%%s%%'`, dataWhereParamField.Field, operatorField, dataWhereParamField.Value)
+							} else {
+								result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
+								arg = append(arg, fmt.Sprintf("%v", dataWhereParamField.Value))
+							}
 						} else {
 							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
 						}
 					default:
-						return "", nil, fmt.Errorf("неизвестный тип данных поля %s: %s", value.(models.WhereParamField).Field, field.DataType)
+						return "", nil, fmt.Errorf("неизвестный тип данных поля %s: %s", dataWhereParamField.Field, field.DataType)
 					}
 					if index < len(dataWhere)-1 {
 						result += fmt.Sprintf(" %s ", operator)
@@ -253,6 +259,9 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 			if len(dataSearch.Fields) == 0 {
 				for _, field := range fields {
 					if field.DataType == "TEXT" || field.DataType == "STRING" {
+						if field.ColumnName == "deleted_at" || field.ColumnName == "created_at" || field.ColumnName == "updated_at" || field.ColumnName == "password" {
+							continue
+						}
 						dataSearch.Fields = append(dataSearch.Fields, field.ColumnName)
 					}
 				}

@@ -76,7 +76,8 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 			if column.ID == currentCol.ID {
 				column.DynamicTableID = currentScheme.ID
 				if column.ColumnName != currentCol.ColumnName {
-					SQLAlert += fmt.Sprintf("RENAME COLUMN \"%s\" TO \"%s\"; ALTER TABLE \"%s\" ", currentCol.ColumnName, column.ColumnName, currentScheme.Name)
+					//SQLAlert += fmt.Sprintf("RENAME COLUMN \"%s\" TO \"%s\"; ALTER TABLE \"%s\" ", currentCol.ColumnName, column.ColumnName, currentScheme.Name)
+					SQLAlert += fmt.Sprintf("RENAME COLUMN \"%s\" TO \"%s\", ", currentCol.ColumnName, column.ColumnName)
 				}
 				if column.DataType != currentCol.DataType {
 					validate := validator.New()
