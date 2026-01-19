@@ -20,7 +20,7 @@ var UserAdmin uint = 1
 
 func seedDefaultData(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		for _, roleName := range []string{"admin", "user"} {
+		for _, roleName := range []string{"admin", "user", "anonymous"} {
 			var role models.Role
 			if err := tx.Where("name = ?", roleName).First(&role).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 				if err := tx.Create(&models.Role{Name: roleName}).Error; err != nil {
