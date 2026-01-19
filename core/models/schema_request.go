@@ -73,12 +73,11 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme 
 				isFilterable = true
 			}
 			filedOptions := FieldOptions{
-				Name:       column.ColumnName,
 				Hidden:     false,
 				Filterable: isFilterable,
 				Order:      index + 1,
 			}
-			ctr.ViewData.FieldOptions = append(ctr.ViewData.FieldOptions, filedOptions)
+			ctr.ViewData.FieldOptions[column.ColumnName] = filedOptions
 		}
 	}
 	var ownerIdColumn = &DynamicColumns{

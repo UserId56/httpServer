@@ -40,13 +40,12 @@ type DynamicScheme struct {
 }
 
 type ViewData struct {
-	ShortView    string         `json:"short_view"`
-	HideMenu     bool           `json:"hide_menu"`
-	FieldOptions []FieldOptions `json:"field_options"`
+	ShortView    string                  `json:"short_view"`
+	HideMenu     bool                    `json:"hide_menu"`
+	FieldOptions map[string]FieldOptions `json:"field_options"`
 }
 
 type FieldOptions struct {
-	Name       string     `json:"name"`
 	Hidden     bool       `gorm:"default:false" json:"hidden"`
 	Filterable bool       `gorm:"default:false" json:"filterable"`
 	Order      int        `json:"order"`
