@@ -42,6 +42,7 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme 
 	if !viewDataExists {
 		ctr.ViewData = &ViewData{}
 		ctr.ViewData.ShortView = "{id}"
+		ctr.ViewData.FieldOptions = make(map[string]FieldOptions)
 	}
 	for _, colDef := range ctr.Columns {
 		if colDef.ColumnName == "title" || colDef.ColumnName == "name" {
@@ -77,6 +78,7 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme 
 				Filterable: isFilterable,
 				Order:      index + 1,
 			}
+			fmt.Printf("%+v\n", ctr.ViewData)
 			ctr.ViewData.FieldOptions[column.ColumnName] = filedOptions
 		}
 	}
