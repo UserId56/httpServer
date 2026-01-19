@@ -152,6 +152,52 @@ func seedDefaultData(db *gorm.DB) error {
 				return err
 			}
 		}
+		var filesScheme models.DynamicScheme
+		if err := tx.Where("name = ?", "files").First(&filesScheme).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+
+			filesScheme = models.DynamicScheme{
+				Name:        "files",
+				DisplayName: "Файлы",
+				ViewData: &models.ViewData{
+					ShortView: "{name}",
+					HideMenu:  false,
+					FieldOptions: []models.FieldOptions{
+						{Name: "id", Hidden: false, Filterable: false, Order: 1, PreValues: make([]models.PreValue, 0)},
+						{Name: "created_at", Hidden: false, Filterable: true, Order: 2, PreValues: make([]models.PreValue, 0)},
+						{Name: "updated_at", Hidden: false, Filterable: true, Order: 3, PreValues: make([]models.PreValue, 0)},
+						{Name: "deleted_at", Hidden: true, Filterable: false, Order: 4, PreValues: make([]models.PreValue, 0)},
+						{Name: "filename", Hidden: false, Filterable: true, Order: 5, PreValues: make([]models.PreValue, 0)},
+						{Name: "filepath", Hidden: false, Filterable: false, Order: 6, PreValues: make([]models.PreValue, 0)},
+						{Name: "filesize", Hidden: false, Filterable: true, Order: 7, PreValues: make([]models.PreValue, 0)},
+						{Name: "owner_id", Hidden: false, Filterable: true, Order: 8, PreValues: make([]models.PreValue, 0)},
+					},
+				},
+				OwnerID: &UserAdmin,
+			}
+			if err := tx.Create(&filesScheme).Error; err != nil {
+				return err
+			}
+		}
+		fileDynamicColumns := []models.DynamicColumns{
+			{ColumnName: "id", DataType: "BIGINT", DynamicTableID: filesScheme.ID, DisplayName: "ID"},
+			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: filesScheme.ID, DisplayName: "Дата создания"},
+			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: filesScheme.ID, DisplayName: "Дата обновления"},
+			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: filesScheme.ID, DisplayName: "Дата удаления"},
+			{ColumnName: "name", DataType: "STRING", DynamicTableID: filesScheme.ID, DisplayName: "Имя файла"},
+			{ColumnName: "file_id", DataType: "STRING", DynamicTableID: filesScheme.ID, DisplayName: "ID файла"},
+			{ColumnName: "file_size", DataType: "BIGINT", DynamicTableID: filesScheme.ID, DisplayName: "Размер файла"},
+			{ColumnName: "owner_id", DataType: "ref", ReferencedScheme: "users", DynamicTableID: filesScheme.ID, DisplayName: "Владелец"},
+		}
+		for _, col := range fileDynamicColumns {
+			var existingCol models.DynamicColumns
+			if err := tx.Where("dynamic_table_id = ? AND column_name = ?", filesScheme.ID, col.ColumnName).First(&existingCol).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&col).Error; err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
@@ -187,7 +233,16 @@ func Connect() (*gorm.DB, error) {
 	}
 	logger.Log(nil, "Подключение к базе данных успешно установлено", logger.Info)
 
+	if execErr := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error; execErr != nil {
+		logger.Log(execErr, "Не удалось создать extension uuid-ossp", logger.Error)
+		return nil, execErr
+	}
+
 	err = db.AutoMigrate(models.Models()...)
+	if err != nil {
+		logger.Log(err, "Ошибка при миграции базы данных", logger.Error)
+		return nil, err
+	}
 	err = seedDefaultData(db)
 	if err != nil {
 		logger.Log(err, "Ошибка при инициализации данных", logger.Error)
