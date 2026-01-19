@@ -8,6 +8,7 @@ type AppController struct {
 	Role   *RoleController
 	Scheme *SchemeController
 	Object *ObjectController
+	File   *FileController
 }
 
 func NewAppController(db *gorm.DB) *AppController {
@@ -17,5 +18,6 @@ func NewAppController(db *gorm.DB) *AppController {
 		Role:   NewRoleController(db),
 		Scheme: NewSchemeController(db),
 		Object: NewObjectController(db),
+		File:   NewFileController(db),
 	}
 }

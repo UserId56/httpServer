@@ -55,5 +55,11 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 			object.DELETE("/:id", middleware.RequirePermission(db, []string{}, true), appController.Object.ObjectDeleteByID)
 			object.POST("/query", middleware.RequirePermission(db, []string{}, true), appController.Object.ObjectQuery)
 		}
+		file := v1.Group("/file")
+		{
+			file.POST("/upload", middleware.RequirePermission(db, []string{"file.POST"}, false), appController.File.FileUpload)
+			file.GET("/get/:id", middleware.RequirePermission(db, []string{"file.GET"}, false), appController.File.FileGetByID)
+			file.DELETE("/delete/:id", middleware.RequirePermission(db, []string{"file.DELETE"}, false), appController.File.FileDeleteByID)
+		}
 	}
 }

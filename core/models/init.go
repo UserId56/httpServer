@@ -8,5 +8,6 @@ func Models() []interface{} {
 		&RefreshToken{},
 		&DynamicScheme{},
 		&DynamicColumns{},
+		&File{},
 	}
 }
