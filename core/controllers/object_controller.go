@@ -65,6 +65,11 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 	obj["owner_id"] = uint(userId.(float64))
 	// Чекаем множественные значения в полях ref и конвертируем их в []int
 	obj = services.ParsIntField(fields, obj)
+	obj, err := services.ParsDataTime(fields, obj, time.Local)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Ошибка даты: " + err.Error()})
+		return
+	}
 	if err := o.DB.Table(objectName).Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Create(&obj).Error; err != nil {
 		logger.Log(err, "Ошибка создания элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
@@ -138,6 +143,11 @@ func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
 		delete(obj, "owner_id")
 	}
 	obj = services.ParsIntField(fields, obj)
+	obj, err := services.ParsDataTime(fields, obj, time.Local)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Ошибка даты: " + err.Error()})
+		return
+	}
 	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Updates(obj).Error; err != nil {
 		logger.Log(err, "Ошибка обновления элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})

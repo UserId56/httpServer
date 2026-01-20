@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/UserId56/httpServer/core/models"
 	"github.com/lib/pq"
@@ -68,7 +69,7 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 						return fmt.Errorf("поле %s имеет неверный тип данных", key)
 					}
 					break
-				case "TEXT", "STRING", "JSON", "DATE", "TIMESTAMP":
+				case "TEXT", "STRING", "JSON", "DATE", "TIMESTAMPTZ":
 					if value == nil {
 						if field.NotNull != nil && *field.NotNull {
 							return fmt.Errorf("поле %s не может быть пустым", key)
@@ -165,4 +166,42 @@ func ExtractInt64Slice(fields []models.DynamicColumns, obj map[string]interface{
 		}
 	}
 	return result
+}
+
+func ParsDataTime(fields []models.DynamicColumns, obj map[string]interface{}, timeZone *time.Location) (map[string]interface{}, error) {
+	result := obj
+
+	for _, field := range fields {
+		switch field.DataType {
+		case "TIMESTAMPTZ":
+			if val, ok := obj[field.ColumnName]; ok {
+				str, ok := val.(string)
+				if !ok || str == "" {
+					continue
+				}
+				t, err := time.ParseInLocation("2006-01-02T15:04", str, timeZone)
+				if err != nil {
+					return nil, fmt.Errorf("поле %s имеет неверный формат даты. Ожидается формат RFC3339: %v", field.ColumnName, err)
+				}
+				// сохраняем в UTC в формате RFC3339
+				obj[field.ColumnName] = t.UTC().Format(time.RFC3339)
+			}
+		case "DATE":
+			if val, ok := obj[field.ColumnName]; ok {
+				str, ok := val.(string)
+				if !ok || str == "" {
+					continue
+				}
+				t, err := time.ParseInLocation("2006-01-02", str, timeZone)
+				if err != nil {
+					return nil, fmt.Errorf("поле %s имеет неверный формат даты. Ожидается формат YYYY-MM-DD: %v", field.ColumnName, err)
+				}
+				// Для DATE сохраняем только дату в указанной локации (без смещений)
+				d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, timeZone)
+				obj[field.ColumnName] = d.Format("2006-01-02")
+			}
+		}
+	}
+
+	return result, nil
 }
