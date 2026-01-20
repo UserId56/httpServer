@@ -114,9 +114,9 @@ func seedDefaultData(db *gorm.DB) error {
 		}
 		userDynamicColumns := []models.DynamicColumns{
 			{ColumnName: "id", DataType: "BIGINT", DynamicTableID: usersScheme.ID, DisplayName: "ID"},
-			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата создания"},
-			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата обновления"},
-			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: usersScheme.ID, DisplayName: "Дата удаления"},
+			{ColumnName: "created_at", DataType: "TIMESTAMPTZ", DynamicTableID: usersScheme.ID, DisplayName: "Дата создания"},
+			{ColumnName: "updated_at", DataType: "TIMESTAMPTZ", DynamicTableID: usersScheme.ID, DisplayName: "Дата обновления"},
+			{ColumnName: "deleted_at", DataType: "TIMESTAMPTZ", DynamicTableID: usersScheme.ID, DisplayName: "Дата удаления"},
 			{ColumnName: "username", DataType: "STRING", DynamicTableID: usersScheme.ID, DisplayName: "Имя пользователя"},
 			{ColumnName: "email", DataType: "STRING", DynamicTableID: usersScheme.ID, DisplayName: "email"},
 			{ColumnName: "password", DataType: "STRING", DynamicTableID: usersScheme.ID, DisplayName: "Пароль"},
@@ -136,9 +136,9 @@ func seedDefaultData(db *gorm.DB) error {
 		}
 		roleDynamicColumns := []models.DynamicColumns{
 			{ColumnName: "id", DataType: "BIGINT", DynamicTableID: rolesScheme.ID, DisplayName: "ID"},
-			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата создания"},
-			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата обновления"},
-			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: rolesScheme.ID, DisplayName: "Дата удаления"},
+			{ColumnName: "created_at", DataType: "TIMESTAMPTZ", DynamicTableID: rolesScheme.ID, DisplayName: "Дата создания"},
+			{ColumnName: "updated_at", DataType: "TIMESTAMPTZ", DynamicTableID: rolesScheme.ID, DisplayName: "Дата обновления"},
+			{ColumnName: "deleted_at", DataType: "TIMESTAMPTZ", DynamicTableID: rolesScheme.ID, DisplayName: "Дата удаления"},
 			{ColumnName: "name", DataType: "STRING", DynamicTableID: rolesScheme.ID, DisplayName: "Имя роли"},
 			{ColumnName: "permission", DataType: "JSONB", DynamicTableID: rolesScheme.ID, DisplayName: "Права доступа"},
 		}
@@ -180,9 +180,9 @@ func seedDefaultData(db *gorm.DB) error {
 		}
 		fileDynamicColumns := []models.DynamicColumns{
 			{ColumnName: "id", DataType: "BIGINT", DynamicTableID: filesScheme.ID, DisplayName: "ID"},
-			{ColumnName: "created_at", DataType: "TIMESTAMP", DynamicTableID: filesScheme.ID, DisplayName: "Дата создания"},
-			{ColumnName: "updated_at", DataType: "TIMESTAMP", DynamicTableID: filesScheme.ID, DisplayName: "Дата обновления"},
-			{ColumnName: "deleted_at", DataType: "TIMESTAMP", DynamicTableID: filesScheme.ID, DisplayName: "Дата удаления"},
+			{ColumnName: "created_at", DataType: "TIMESTAMPTZ", DynamicTableID: filesScheme.ID, DisplayName: "Дата создания"},
+			{ColumnName: "updated_at", DataType: "TIMESTAMPTZ", DynamicTableID: filesScheme.ID, DisplayName: "Дата обновления"},
+			{ColumnName: "deleted_at", DataType: "TIMESTAMPTZ", DynamicTableID: filesScheme.ID, DisplayName: "Дата удаления"},
 			{ColumnName: "name", DataType: "STRING", DynamicTableID: filesScheme.ID, DisplayName: "Имя файла"},
 			{ColumnName: "file_id", DataType: "STRING", DynamicTableID: filesScheme.ID, DisplayName: "ID файла"},
 			{ColumnName: "file_size", DataType: "BIGINT", DynamicTableID: filesScheme.ID, DisplayName: "Размер файла"},
@@ -266,5 +266,12 @@ func Connect() (*gorm.DB, error) {
 		return nil, err
 	}
 	logger.Log(nil, "База данных успешно мигрирована", logger.Info)
+	var settings models.Settings
+	if err := db.First(&settings, 1).Error; err != nil {
+		logger.Log(err, "Ошибка при получении настроек", logger.Error)
+		return nil, err
+	}
+	loc := time.FixedZone(fmt.Sprintf("UTC%+d", settings.Value.TimeZone), settings.Value.TimeZone*3600)
+	time.Local = loc
 	return db, nil
 }

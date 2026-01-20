@@ -33,9 +33,9 @@ func (ctr *CreateSchemeRequest) CreateDynamicTable(ownerId uint) *DynamicScheme 
 	var columns []*DynamicColumns
 	var defaultColumns = []*DynamicColumns{
 		{ColumnName: "id", DisplayName: "ID", DataType: "BIGINT", NotNull: ptrBool(true), IsUnique: ptrBool(true)},
-		{ColumnName: "created_at", DisplayName: "Дата создания", DataType: "TIMESTAMP", NotNull: ptrBool(true), DefaultValue: "NOW"},
-		{ColumnName: "updated_at", DisplayName: "Дата изменения", DataType: "TIMESTAMP", NotNull: ptrBool(true), DefaultValue: "NOW"},
-		{ColumnName: "deleted_at", DisplayName: "Дата удаления", DataType: "TIMESTAMP"},
+		{ColumnName: "created_at", DisplayName: "Дата создания", DataType: "TIMESTAMPTZ", NotNull: ptrBool(true), DefaultValue: "NOW"},
+		{ColumnName: "updated_at", DisplayName: "Дата изменения", DataType: "TIMESTAMPTZ", NotNull: ptrBool(true), DefaultValue: "NOW"},
+		{ColumnName: "deleted_at", DisplayName: "Дата удаления", DataType: "TIMESTAMPTZ"},
 	}
 	columns = append(columns, defaultColumns...)
 	var viewDataExists = ctr.ViewData != nil

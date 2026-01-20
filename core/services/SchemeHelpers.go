@@ -117,7 +117,7 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				if column.DefaultValue != currentCol.DefaultValue {
 					if column.DefaultValue != "" {
 						switch column.DataType {
-						case "TEXT", "STRING", "TIMESTAMP", "DATE", "JSON":
+						case "TEXT", "STRING", "TIMESTAMPTZ", "DATE", "JSON":
 							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT '%s', ", column.ColumnName, column.DefaultValue)
 						case "INT", "BIGINT", "BOOLEAN", "ref":
 							isInt, err := strconv.ParseInt(column.DefaultValue, 10, 64)
@@ -212,7 +212,7 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 	var cols []string
 	var colRef []string
 	if !isAdd {
-		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMP`, `"owner_id" BIGINT`)
+		cols = append(cols, "id SERIAL PRIMARY KEY", `"created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`, `"updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`, `"deleted_at" TIMESTAMPTZ`, `"owner_id" BIGINT`)
 	}
 	for _, col := range req.Columns {
 		var colString string
@@ -257,7 +257,7 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 				colString += fmt.Sprintf(" DEFAULT %f", isFloat)
 			case "BOOLEAN":
 				colString += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
-			case "TIMESTAMP", "DATE":
+			case "TIMESTAMPTZ", "DATE":
 				colString += fmt.Sprintf(" DEFAULT '%s'", col.DefaultValue)
 			case "JSON":
 				colString += fmt.Sprintf(" DEFAULT '%s'", col.DefaultValue)

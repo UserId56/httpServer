@@ -1,2 +1,2 @@
-SELECT * FROM "dynamic_columns" WHERE dynamic_table_id = (SELECT id FROM dynamic_schemes WHERE name = 'test_ref') AND "dynamic_columns"."deleted_at" IS NULL
-( "pearentId" IS NULL AND "name" ILIKE '%ыва%' )
+SELECT name, abbrev, utc_offset FROM pg_timezone_names
+WHERE name = current_setting('TimeZone');

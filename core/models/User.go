@@ -8,8 +8,8 @@ import (
 
 type User struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
-	CreatedAt time.Time      `json:"created_at,omitempty"`
-	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at,omitempty"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime json:"updated_at,omitempty"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	Username string `gorm:"type:text;unique;not null" json:"username" binding:"required,min=3,max=50"`
