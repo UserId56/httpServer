@@ -9,5 +9,6 @@ func Models() []interface{} {
 		&DynamicScheme{},
 		&DynamicColumns{},
 		&File{},
+		&Settings{},
 	}
 }

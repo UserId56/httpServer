@@ -198,6 +198,20 @@ func seedDefaultData(db *gorm.DB) error {
 				return err
 			}
 		}
+		var settings models.Settings
+		if err := tx.Where("ID = ?", 1).First(&settings).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			settings = models.Settings{
+				ID: 1,
+				Value: models.SettingsValue{
+					Lang:          []string{"ru"},
+					DefaultRoleId: 2,
+					TimeZone:      3,
+				},
+			}
+			if err := tx.Create(&settings).Error; err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
