@@ -46,14 +46,17 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 		Password: string(hashPassword),
 		Avatar:   userInput.Avatar,
 		Bio:      userInput.Bio,
-		RoleID:   userInput.RoleID,
 		Role:     nil,
 	}
 
-	if user.RoleID == nil {
-		var defaultRole uint = 2
-		user.RoleID = &defaultRole
+	var settings models.Settings
+	if err := uc.DB.Model(&models.Settings{}).First(&settings, 1).Error; err != nil {
+		logger.Log(err, "Ошибка получения настроек", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
 	}
+	var defaultRole uint = settings.Value.DefaultRoleId
+	user.RoleID = &defaultRole
 
 	tx := uc.DB.Begin()
 	if tx.Error != nil {

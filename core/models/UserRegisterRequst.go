@@ -6,5 +6,4 @@ type RegisterUserRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 	Avatar   string `json:"avatar,omitempty"`
 	Bio      string `json:"bio,omitempty"`
-	RoleID   *uint  `json:"role_id,omitempty"`
 }
