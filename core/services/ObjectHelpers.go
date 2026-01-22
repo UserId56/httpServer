@@ -52,6 +52,19 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 						break
 					}
 					if field.IsMultiple != nil && *field.IsMultiple {
+						if field.ReferencedScheme == "files" {
+							arr, ok := value.([]interface{})
+							if !ok {
+								return fmt.Errorf("поле %s имеет неверный тип данных", key)
+							}
+							for _, v := range arr {
+								_, ok := v.(string)
+								if !ok {
+									return fmt.Errorf("поле %s имеет неверный тип данных", key)
+								}
+							}
+							break
+						}
 						arr, ok := value.([]interface{})
 						if !ok {
 							return fmt.Errorf("поле %s имеет неверный тип данных", key)
@@ -61,6 +74,13 @@ func CheckFieldsAndValue(obj map[string]interface{}, tableFields []models.Dynami
 							if !ok {
 								return fmt.Errorf("поле %s имеет неверный тип данных", key)
 							}
+						}
+						break
+					}
+					if field.ReferencedScheme == "files" {
+						_, ok := value.(string)
+						if !ok {
+							return fmt.Errorf("поле %s имеет неверный тип данных", key)
 						}
 						break
 					}

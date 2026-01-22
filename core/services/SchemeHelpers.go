@@ -87,9 +87,15 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 					}
 					var dataType string
 					if column.DataType == "ref" && column.ReferencedScheme != "" {
-						dataType = "INT"
+						dataType = "BIGINT"
 						if column.IsMultiple != nil && *column.IsMultiple {
-							dataType = "INT[]"
+							dataType = "BIGINT[]"
+						}
+						if column.ReferencedScheme == "files" {
+							dataType = "TEXT"
+							if column.IsMultiple != nil && *column.IsMultiple {
+								dataType = "JSONB"
+							}
 						}
 					} else {
 						dataType = column.DataType
@@ -120,11 +126,15 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 						case "TEXT", "STRING", "TIMESTAMPTZ", "DATE", "JSON":
 							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT '%s', ", column.ColumnName, column.DefaultValue)
 						case "INT", "BIGINT", "BOOLEAN", "ref":
-							isInt, err := strconv.ParseInt(column.DefaultValue, 10, 64)
-							if err != nil {
-								return "", nil, nil, fmt.Errorf("не верный тип данных DEFAULT для типа %s: %s", column.DataType, column.DefaultValue)
+							if column.ReferencedScheme != "files" {
+								isInt, err := strconv.ParseInt(column.DefaultValue, 10, 64)
+								if err != nil {
+									return "", nil, nil, fmt.Errorf("не верный тип данных DEFAULT для типа %s: %s", column.DataType, column.DefaultValue)
+								}
+								SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT %d, ", column.ColumnName, isInt)
+							} else {
+								SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT '%s', ", column.ColumnName, column.DefaultValue)
 							}
-							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" SET DEFAULT %d, ", column.ColumnName, isInt)
 						case "FLOAT", "MONEY":
 							isFloat, err := strconv.ParseFloat(column.DefaultValue, 64)
 							if err != nil {
@@ -158,9 +168,17 @@ func GenerateUpdateTableSQL(columnsUpdate []*models.DynamicColumns, currentSchem
 				}
 				if column.DataType == "ref" && *column.IsMultiple != *currentCol.IsMultiple {
 					if column.IsMultiple != nil && *column.IsMultiple {
-						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE BIGINT[] USING ARRAY[\"%s\"]::BIGINT[], ", column.ColumnName, column.ColumnName)
+						if column.ReferencedScheme == "files" {
+							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE JSONB USING (CASE WHEN \"%s\" IS NULL OR \"%s\" = 'null' THEN '[]'::jsonb ELSE to_jsonb(ARRAY[\"%s\"]) END), ", column.ColumnName, column.ColumnName, column.ColumnName, column.ColumnName)
+						} else {
+							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE BIGINT[] USING ARRAY[\"%s\"]::BIGINT[], ", column.ColumnName, column.ColumnName)
+						}
 					} else {
-						SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE INT USING (CASE WHEN cardinality(\"%s\") >= 1 THEN (\"%s\")[1] ELSE NULL END), ", column.ColumnName, column.ColumnName, column.ColumnName)
+						if column.ReferencedScheme == "files" {
+							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE TEXT USING (NULLIF((\"%s\"::JSONB->>0), 'null')), ", column.ColumnName, column.ColumnName)
+						} else {
+							SQLAlert += fmt.Sprintf("ALTER COLUMN \"%s\" TYPE INT USING (CASE WHEN cardinality(\"%s\") >= 1 THEN (\"%s\")[1] ELSE NULL END), ", column.ColumnName, column.ColumnName, column.ColumnName)
+						}
 					}
 				}
 				if column.DataType == "ref" && column.ReferencedScheme != currentCol.ReferencedScheme {
@@ -225,6 +243,12 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			if col.IsMultiple != nil && *col.IsMultiple {
 				typeRef = "BIGINT[]"
 			}
+			if col.ReferencedScheme == "files" {
+				typeRef = "TEXT"
+				if col.IsMultiple != nil && *col.IsMultiple {
+					typeRef = "JSONB"
+				}
+			}
 			colString += fmt.Sprintf(`%s"%s" %s`, updateStr, col.ColumnName, typeRef)
 		} else {
 			dataType := col.DataType
@@ -262,10 +286,11 @@ func GenerateCreateTableSQL(req models.CreateSchemeRequest, isAdd bool) (string,
 			case "JSON":
 				colString += fmt.Sprintf(" DEFAULT '%s'", col.DefaultValue)
 			case "ref":
-				colString += fmt.Sprintf(" DEFAULT %s", col.DefaultValue)
+				//colString += fmt.Sprintf(\" DEFAULT %s", col.DefaultValue)
+				return "", false, fmt.Errorf("для поля ref не поддерживается дефолтное значение")
 			default:
 				// Unsupported data type for default value
-				return "", false, fmt.Errorf("не верный тип данных %s", col.DataType)
+				return "", false, fmt.Errorf("не верный тип данных дефолтного значения для типа %s: %s", col.DataType, col.DefaultValue)
 			}
 
 		}
