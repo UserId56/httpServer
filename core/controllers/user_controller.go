@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -122,6 +123,14 @@ func (uc *UserController) UserRegistration(c *gin.Context) {
 		RoleID:       user.RoleID,
 	}
 
+	configTime := os.Getenv("SERVER_JWT_EXPIRE_TIME")
+
+	minutes, err := strconv.Atoi(configTime)
+	if err != nil || minutes <= 0 {
+		minutes = 600
+	}
+	c.SetCookie("Authorization", jwt, minutes*60, "/", "", false, true)
+
 	c.JSON(200, userResponse)
 }
 
@@ -173,6 +182,14 @@ func (uc *UserController) UserLogin(c *gin.Context) {
 		AccessToken:  jwt,
 		RoleID:       user.RoleID,
 	}
+
+	configTime := os.Getenv("SERVER_JWT_EXPIRE_TIME")
+
+	minutes, err := strconv.Atoi(configTime)
+	if err != nil || minutes <= 0 {
+		minutes = 600
+	}
+	c.SetCookie("Authorization", jwt, minutes*60, "/", "", false, true)
 
 	c.JSON(200, userResponse)
 }

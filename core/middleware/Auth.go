@@ -13,13 +13,24 @@ import (
 
 func Auth(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		Authorization := c.GetHeader("Authorization")
+		var Authorization string
+		Authorization = c.GetHeader("Authorization")
 		if Authorization == "" {
-			c.JSON(401, gin.H{"error": "Нет токена авторизации"})
-			c.Abort()
-			return
+			if cookieVal, err := c.Cookie("Authorization"); err == nil && cookieVal != "" {
+				Authorization = cookieVal
+			} else {
+				c.JSON(401, gin.H{"error": "Нет токена авторизации"})
+				c.Abort()
+				return
+			}
+
 		}
-		JWT := strings.Split(Authorization, "Bearer ")[1]
+		var JWT string
+		if strings.HasPrefix(Authorization, "Bearer ") {
+			JWT = strings.TrimPrefix(Authorization, "Bearer ")
+		} else {
+			JWT = Authorization // если токен пришёл без "Bearer "
+		}
 		token, err := services.ParseJWT(JWT)
 		if err != nil || !token.Valid {
 			c.JSON(401, gin.H{"error": "Неавторизованный пользователь"})
