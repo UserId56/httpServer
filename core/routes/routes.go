@@ -59,6 +59,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 		{
 			file.POST("/upload", middleware.RequirePermission(db, []string{"file.POST"}, false), appController.File.FileUpload)
 			file.GET("/get/:id", middleware.RequirePermission(db, []string{"file.GET"}, false), appController.File.FileGetByID)
+			file.GET("/meta/:id", middleware.RequirePermission(db, []string{"file.GET"}, false), appController.File.FileGetMetaDataByID)
 			file.DELETE("/delete/:id", middleware.RequirePermission(db, []string{"file.DELETE"}, false), appController.File.FileDeleteByID)
 		}
 		settings := v1.Group("/settings")

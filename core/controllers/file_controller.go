@@ -160,3 +160,32 @@ func (fc *FileController) FileDeleteByID(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func (fc *FileController) FileGetMetaDataByID(c *gin.Context) {
+	id := c.Param("id")
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Не валидный ID файла"})
+		return
+	}
+
+	var file models.File
+	if err := fc.DB.Where("file_id = ?", uid).First(&file).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Файл не найден"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"file_id":   file.FileId,
+		"name":      file.Name,
+		"file_size": file.FileSize,
+		//"owner_id":   file.OwnerID,
+		//"created_at": file.CreatedAt,
+		//"updated_at": file.UpdatedAt,
+	})
+
+}
