@@ -86,13 +86,14 @@ func (o *ObjectController) ObjectGetByID(c *gin.Context) {
 	}
 	ElementID := c.Param("id")
 	result := make(map[string]interface{})
-	if err := o.DB.Table(ObjectID).Where("id = ?", ElementID).Limit(1).Find(&result).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			c.JSON(404, gin.H{"error": "Элемент не найден"})
-			return
-		}
-		logger.Log(err, "Ошибка получения элемента", logger.Error)
+	tx := o.DB.Table(ObjectID).Where("id = ?", ElementID).Limit(1).Find(&result)
+	if tx.Error != nil {
+		logger.Log(tx.Error, "Ошибка получения элемента", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	if tx.RowsAffected == 0 {
+		c.JSON(404, gin.H{"error": "Элемент не найден"})
 		return
 	}
 	var fields []models.DynamicColumns
