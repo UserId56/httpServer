@@ -266,31 +266,35 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 					}
 				}
 			}
-			for fIndex, fieldName := range dataSearch.Fields {
-				fieldFound := false
-				for _, field := range fields {
-					if field.ColumnName == fieldName {
-						fieldFound = true
-						subResult += fmt.Sprintf(`"%s" ILIKE ?`, fieldName)
-						arg = append(arg, "%"+dataSearch.Query+"%")
-						if fIndex < len(dataSearch.Fields)-1 {
-							subResult += " OR "
-						} else {
-							subResult += " )"
+			if len(dataSearch.Fields) != 0 {
+				for fIndex, fieldName := range dataSearch.Fields {
+					fieldFound := false
+					for _, field := range fields {
+						if field.ColumnName == fieldName {
+							fieldFound = true
+							subResult += fmt.Sprintf(`"%s" ILIKE ?`, fieldName)
+							arg = append(arg, "%"+dataSearch.Query+"%")
+							if fIndex < len(dataSearch.Fields)-1 {
+								subResult += " OR "
+							} else {
+								subResult += " )"
+							}
+							break
 						}
-						break
+					}
+					if !fieldFound {
+						return "", nil, fmt.Errorf("поле для поиска %s не найдено в схеме", fieldName)
 					}
 				}
-				if !fieldFound {
-					return "", nil, fmt.Errorf("поле для поиска %s не найдено в схеме", fieldName)
+				if index < len(dataWhere)-1 {
+					result += subResult + " " + operator + " "
+				} else {
+					result += subResult + " )"
 				}
-			}
-			if index < len(dataWhere)-1 {
-				result += subResult + " " + operator + " "
+				continue
 			} else {
-				result += subResult + " )"
+				return "", nil, fmt.Errorf("в коллеции нет текстовых полей для поиска")
 			}
-			continue
 		}
 		//var dataInQuery models.InQuery
 		//err = json.Unmarshal(jsonData, &dataInQuery)
