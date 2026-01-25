@@ -44,3 +44,12 @@ func (sc *SettingsController) SettingsUpdate(c *gin.Context) {
 
 	c.Status(200)
 }
+
+func (sc *SettingsController) SettingsGetStyle(c *gin.Context) {
+	var settings models.Settings
+	if err := sc.DB.Where("ID = ?", 1).First(&settings).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	c.JSON(200, gin.H{"style": settings.Value.Style})
+}

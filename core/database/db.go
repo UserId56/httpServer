@@ -206,6 +206,7 @@ func seedDefaultData(db *gorm.DB) error {
 					Lang:          []string{"ru"},
 					DefaultRoleId: 2,
 					TimeZone:      3,
+					Style:         "",
 				},
 			}
 			if err := tx.Create(&settings).Error; err != nil {

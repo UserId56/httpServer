@@ -66,6 +66,7 @@ func SetupRouter(r *gin.Engine, db *gorm.DB) {
 		{
 			settings.GET("/", middleware.RequirePermission(db, []string{"settings.GET"}, false), appController.Settings.SettingsGet)
 			settings.PUT("/", middleware.RequirePermission(db, []string{"settings.PUT"}, false), appController.Settings.SettingsUpdate)
+			settings.GET("/style", middleware.RequirePermission(db, []string{"style.GET"}, false), appController.Settings.SettingsGetStyle)
 		}
 	}
 }
