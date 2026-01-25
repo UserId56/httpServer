@@ -134,25 +134,48 @@ func WhereGeneration(dataWhere []interface{}, fields []models.DynamicColumns, op
 							if !ok {
 								isInt, err := strconv.ParseInt(fmt.Sprintf("%v", dataWhereParamField.Value), 10, 64)
 								if err != nil {
-									return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
+									return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается BIGINT", dataWhereParamField.Field)
 								}
-								result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
-								arg = append(arg, isInt)
-							} else {
-								result += fmt.Sprintf(`"%s" %s (`, dataWhereParamField.Field, operatorField)
-								fmt.Printf("%v\n", arr)
-								for indexValue, v := range arr {
-									isInt, err := strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
-									if err != nil {
-										return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается INT", dataWhereParamField.Field)
-									}
+								if field.IsMultiple != nil && *field.IsMultiple == false {
+									result += fmt.Sprintf(`"%s" %s ?`, dataWhereParamField.Field, operatorField)
 									arg = append(arg, isInt)
-									result += "?"
-									if indexValue < len(arr)-1 {
-										result += ", "
-									}
+								} else {
+									result += fmt.Sprintf(`? = ANY("%s")`, dataWhereParamField.Field)
+									arg = append(arg, isInt)
 								}
-								result += `)`
+
+							} else {
+								if field.IsMultiple != nil && *field.IsMultiple == false {
+									result += fmt.Sprintf(`"%s" %s (`, dataWhereParamField.Field, operatorField)
+									fmt.Printf("%v\n", arr)
+									for indexValue, v := range arr {
+										isInt, err := strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
+										if err != nil {
+											return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается BIGINT[]", dataWhereParamField.Field)
+										}
+										arg = append(arg, isInt)
+										result += "?"
+										if indexValue < len(arr)-1 {
+											result += ", "
+										}
+									}
+									result += `)`
+								} else {
+									result += fmt.Sprintf(`"%s" && ARRAY[`, dataWhereParamField.Field)
+									for indexValue, v := range arr {
+										isInt, err := strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64)
+										if err != nil {
+											return "", nil, fmt.Errorf("не верный тип данных для поля %s, ожидается BIGINT[]", dataWhereParamField.Field)
+										}
+										arg = append(arg, isInt)
+										result += "?"
+										if indexValue < len(arr)-1 {
+											result += ", "
+										}
+									}
+									result += `]::bigint[]`
+								}
+
 							}
 						} else {
 							result += fmt.Sprintf(`"%s" %s NULL`, dataWhereParamField.Field, operatorField)
