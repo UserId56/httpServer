@@ -205,7 +205,7 @@ func (uc *UserController) UserGetMyProfile(c *gin.Context) {
 		}
 		c.JSON(200, user)
 	} else {
-		c.JSON(401, gin.H{"error": "Не авторизован"})
+		c.JSON(401, gin.H{"error": "Не авторизованный пользователь"})
 	}
 }
 
@@ -236,7 +236,7 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 		return
 	}
 	if !existsId {
-		c.JSON(401, gin.H{"error": "Не авторизован"})
+		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
 		return
 	}
 

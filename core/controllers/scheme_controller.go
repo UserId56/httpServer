@@ -23,6 +23,11 @@ func NewSchemeController(db *gorm.DB) *SchemeController {
 }
 
 func (tc *SchemeController) SchemeCreate(c *gin.Context) {
+	userId, exist := c.Get("user_id")
+	if !exist {
+		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
+		return
+	}
 	var req models.CreateSchemeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Log(err, "Ошибка привязки JSON", logger.Error)
@@ -49,12 +54,6 @@ func (tc *SchemeController) SchemeCreate(c *gin.Context) {
 	}
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Ошибка создания таблицы: " + err.Error()})
-		tx.Rollback()
-		return
-	}
-	userId, exist := c.Get("user_id")
-	if !exist {
-		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
 		tx.Rollback()
 		return
 	}
