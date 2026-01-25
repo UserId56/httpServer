@@ -32,6 +32,11 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "Таблица не найдена"})
 		return
 	}
+	userId, exist := c.Get("user_id")
+	if !exist {
+		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
+		return
+	}
 	var obj map[string]interface{}
 	if err := c.ShouldBindJSON(&obj); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -55,11 +60,6 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 	}
 	if err := services.CheckFieldsAndValue(obj, fields, true); err != nil {
 		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
-		return
-	}
-	userId, exist := c.Get("user_id")
-	if !exist {
-		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
 		return
 	}
 	obj["owner_id"] = uint(userId.(float64))

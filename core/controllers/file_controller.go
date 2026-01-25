@@ -77,13 +77,13 @@ func (fc *FileController) FileUpload(c *gin.Context) {
 	// Сохраняем файл на диск
 	dst, err := os.Create(dstPath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create destination file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	defer dst.Close()
 
 	if _, err := io.Copy(dst, io.LimitReader(src, maxUploadSize+1)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot save file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 
@@ -94,6 +94,7 @@ func (fc *FileController) FileUpload(c *gin.Context) {
 	userId, exist := c.Get("user_id")
 	if !exist {
 		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не аутентифицирован"})
 	}
 	file.OwnerID = uint(userId.(float64))
 	file.FileSize = fileHeader.Size
