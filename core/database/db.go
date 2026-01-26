@@ -23,7 +23,7 @@ func seedDefaultData(db *gorm.DB) error {
 		for _, roleName := range []string{"admin", "user", "anonymous"} {
 			var role models.Role
 			if err := tx.Where("name = ?", roleName).First(&role).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-				if err := tx.Create(&models.Role{Name: roleName}).Error; err != nil {
+				if err := tx.Create(&models.Role{Name: roleName, IsSystem: true}).Error; err != nil {
 					return err
 				}
 			} else if err != nil {

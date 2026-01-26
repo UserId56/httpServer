@@ -3,8 +3,6 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"slices"
-	"strings"
 
 	"github.com/UserId56/httpServer/core/models"
 
@@ -31,20 +29,23 @@ func RequirePermission(db *gorm.DB, permission []string, isObject bool) gin.Hand
 			c.Abort()
 			return
 		}
-		valid := true
 		if isObject {
 			objectName := c.Param("object")
 			methodName := c.Request.Method
 			permission = append(permission, fmt.Sprintf("%s.%s", objectName, methodName))
 		}
 		for _, perm := range permission {
-			valid = valid && slices.Contains(role.Permission, perm)
-		}
-		permissionString := strings.Join(permission, ", ")
-		if !valid {
-			c.JSON(403, gin.H{"error": "Необходимы права: " + permissionString + " или права Администратора"})
-			c.Abort()
-			return
+			value, ok := role.Permission[perm]
+			if !ok {
+				c.JSON(403, gin.H{"error": "Необходимы права: " + perm + " или права Администратора"})
+				c.Abort()
+				return
+			}
+			if !value {
+				c.JSON(403, gin.H{"error": "Действие запрещено"})
+				c.Abort()
+				return
+			}
 		}
 		c.Set("role_permissions", role.Permission)
 		c.Next()

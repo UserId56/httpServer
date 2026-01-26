@@ -7,8 +7,8 @@ import (
 )
 
 type CreateRoleRequest struct {
-	Name       string   `json:"name"`
-	Permission []string `json:"permission"`
+	Name       string          `json:"name"`
+	Permission map[string]bool `json:"permission"`
 }
 
 type Role struct {
@@ -17,6 +17,7 @@ type Role struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
-	Name       string   `gorm:"type:text;unique;not null" json:"name"`
-	Permission []string `gorm:"type:jsonb;serializer:json" json:"permission"`
+	Name       string          `gorm:"type:text;unique;not null" json:"name"`
+	Permission map[string]bool `gorm:"type:jsonb;serializer:json" json:"permission"`
+	IsSystem   bool            `gorm:"type:boolean;default:false" json:"is_system"`
 }
