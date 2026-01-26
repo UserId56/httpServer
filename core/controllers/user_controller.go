@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -378,15 +379,13 @@ func (uc *UserController) UserQuery(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 			return
 		}
-		for _, field := range userPermissions.([]string) {
-			if strings.Contains(field, "forbidden") {
-				strArray := strings.Split(field, ".")
-				for _, qField := range Query.Include {
-					if qField == strArray[1] {
-						// NOTE: Если право есть в правах роли, то ему НЕЛЬЗЯ делать действие
-						c.JSON(403, gin.H{"error": "Недостаточно прав для получения поля: " + qField})
-						return
-					}
+		for permission, value := range userPermissions.(map[string]bool) {
+			arrStr := strings.Split(permission, ".")
+			if len(arrStr) == 3 {
+				str := fmt.Sprintf("\"%s\"", arrStr[1])
+				if slices.Contains(Query.Include, str) && !value && arrStr[2] == "GET" {
+					index := slices.Index(Query.Include, str)
+					Query.Include = slices.Delete(Query.Include, index, index+1)
 				}
 			}
 		}
