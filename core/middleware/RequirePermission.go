@@ -47,7 +47,6 @@ func RequirePermission(db *gorm.DB, permission []string, isObject bool) gin.Hand
 				return
 			}
 		}
-		c.Set("role_permissions", role.Permission)
 		c.Next()
 	}
 
