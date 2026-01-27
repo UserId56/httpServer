@@ -17,12 +17,12 @@ func main() {
 	wg := &sync.WaitGroup{}
 	InitPlugins := []plugins2.Plugin{&testPlugin}
 	config := models.Config{
-		Address:         "",
+		Address:         "0.0.0.0",
 		Port:            3000,
-		MaxIdleConns:    10,
-		MaxOpenConns:    100,
-		ConnMaxLifetime: 30,
-		ConnMaxIdleTime: 10,
+		MaxIdleConns:    100,  // держать готовые соединения
+		MaxOpenConns:    240,  // максимальные параллельные подключения к БД
+		ConnMaxLifetime: 1800, // в секундах (30 минут) — перезапускать соединения периодически
+		ConnMaxIdleTime: 300,  // в секундах (5 минут)
 	}
 	core.ServerInit(InitPlugins, wg, config)
 }

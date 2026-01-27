@@ -111,6 +111,9 @@ func (o *ObjectController) ObjectGetByID(c *gin.Context) {
 	}
 	for permission, value := range userPermissions.(map[string]bool) {
 		arrStr := strings.Split(permission, ".")
+		if arrStr[0] != ObjectID {
+			continue
+		}
 		if len(arrStr) == 3 {
 			_, ok := result[arrStr[1]]
 			if ok && c.Request.Method == arrStr[2] {
@@ -256,6 +259,9 @@ func (o *ObjectController) ObjectQuery(c *gin.Context) {
 	}
 	for permission, value := range userPermissions.(map[string]bool) {
 		arrStr := strings.Split(permission, ".")
+		if arrStr[0] != object {
+			continue
+		}
 		if len(arrStr) == 3 {
 			str := fmt.Sprintf("\"%s\"", arrStr[1])
 			if slices.Contains(Query.Include, str) && !value && arrStr[2] == "GET" {

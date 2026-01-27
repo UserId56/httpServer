@@ -199,7 +199,7 @@ func ParsDataTime(fields []models.DynamicColumns, obj map[string]interface{}, ti
 				if !ok || str == "" {
 					continue
 				}
-				t, err := time.ParseInLocation("2006-01-02T15:04", str, timeZone)
+				t, err := time.ParseInLocation(time.RFC3339, str, timeZone)
 				if err != nil {
 					return nil, fmt.Errorf("поле %s имеет неверный формат даты. Ожидается формат RFC3339: %v", field.ColumnName, err)
 				}
