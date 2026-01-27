@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -59,6 +60,17 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
+	userPermissions, exists := c.Get("permission")
+	if !exists {
+		logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	err := services.CheckAccessFields(obj, userPermissions.(map[string]bool), objectName, "POST")
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
 	if err := services.CheckFieldsAndValue(obj, fields, true); err != nil {
 		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
 		return
@@ -66,7 +78,7 @@ func (o *ObjectController) ObjectCreate(c *gin.Context) {
 	obj["owner_id"] = uint(userId.(float64))
 	// Чекаем множественные значения в полях ref и конвертируем их в []int
 	obj = services.ParsIntField(fields, obj)
-	obj, err := services.ParsDataTime(fields, obj, time.Local)
+	obj, err = services.ParsDataTime(fields, obj, time.Local)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Ошибка даты: " + err.Error()})
 		return
@@ -156,6 +168,17 @@ func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
+	userPermissions, exists := c.Get("permission")
+	if !exists {
+		logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+		return
+	}
+	err := services.CheckAccessFields(obj, userPermissions.(map[string]bool), ObjectID, "PUT")
+	if err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
 	if err := services.CheckFieldsAndValue(obj, fields, false); err != nil {
 		c.JSON(400, gin.H{"error": "Ошибка валидации полей: " + err.Error()})
 		return
@@ -166,7 +189,7 @@ func (o *ObjectController) ObjectUpdateByID(c *gin.Context) {
 		delete(obj, "owner_id")
 	}
 	obj = services.ParsIntField(fields, obj)
-	obj, err := services.ParsDataTime(fields, obj, time.Local)
+	obj, err = services.ParsDataTime(fields, obj, time.Local)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Ошибка даты: " + err.Error()})
 		return
