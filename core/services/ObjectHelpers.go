@@ -225,3 +225,22 @@ func ParsDataTime(fields []models.DynamicColumns, obj map[string]interface{}, ti
 
 	return result, nil
 }
+
+func CheckAccessFields(obj map[string]interface{}, permissions map[string]bool, collectionName string, method string) error {
+	for permission, value := range permissions {
+		arrStr := strings.Split(permission, ".")
+		if arrStr[0] != collectionName {
+			continue
+		}
+		if len(arrStr) == 3 {
+			_, ok := obj[arrStr[1]]
+			if ok && method == arrStr[2] {
+				if !value {
+					return fmt.Errorf("отсутствуют права на поле %s в коллекции %s для метода %s", arrStr[1], collectionName, method)
+				}
+			}
+
+		}
+	}
+	return nil
+}

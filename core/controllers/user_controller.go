@@ -230,19 +230,24 @@ func (uc *UserController) UserGetByID(c *gin.Context) {
 		return
 	}
 	currentUserIdAuth, existsId := c.Get("user_id")
+	if !existsId {
+		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
+		return
+	}
 	currentUserId, err := strconv.ParseUint(fmt.Sprintf("%v", currentUserIdAuth), 10, 64)
 	if err != nil {
 		logger.Log(err, "Ошибка преобразования user_id из контекста", logger.Error)
 		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-	if !existsId {
-		c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
+	userPermissions, exists := c.Get("permission")
+	if !exists {
+		logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
-
-	fmt.Printf("%d %d\n", user.ID, currentUserId)
-	if userRoleId.(float64) == 1 || uint64(user.ID) == currentUserId {
+	permission := userPermissions.(map[string]bool)
+	if userRoleId.(float64) == 1 || uint64(user.ID) == currentUserId || permission["user.PUT"] {
 		c.JSON(200, user)
 		return
 	}
@@ -258,20 +263,29 @@ func (uc *UserController) UserUpdateByID(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Неверный ID пользователя"})
 		return
 	}
-	UserIDAuth, exists := c.Get("user_id")
-	floatUserIDAuth, ok := UserIDAuth.(float64)
-	if !ok {
-		logger.Log(errors.New("Ошибка преобразования user_id"), "Ошибка преобразования user_id из JWT", logger.Error)
-		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
-		return
-	}
-	if (!exists || uint64(floatUserIDAuth) != id) && uint64(floatUserIDAuth) != 1 {
-		c.JSON(403, gin.H{"error": "Нет прав для изменения этого пользователя"})
-		return
-	}
 	var userInput map[string]interface{}
 	if err := c.ShouldBindJSON(&userInput); err != nil {
 		c.JSON(400, gin.H{"error": "Не валидный JSON или не валидные поля"})
+		return
+	}
+	UserIDAuth, exists := c.Get("user_id")
+	floatUserIDAuth, ok := UserIDAuth.(float64)
+	if (!exists || uint64(floatUserIDAuth) != id) || uint64(floatUserIDAuth) != 1 {
+		userPermissions, existsP := c.Get("permission")
+		if !existsP {
+			logger.Log(errors.New("роль не указана"), "Ошибка получения прав роли из контекста", logger.Error)
+			c.JSON(500, gin.H{"error": "Ошибка на сервере"})
+			return
+		}
+		err = services.CheckAccessFields(userInput, userPermissions.(map[string]bool), "user", "PUT")
+		if err != nil {
+			c.JSON(403, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	if !ok {
+		logger.Log(errors.New("Ошибка преобразования user_id"), "Ошибка преобразования user_id из JWT", logger.Error)
+		c.JSON(500, gin.H{"error": "Ошибка на сервере"})
 		return
 	}
 	err = services.ValidationFields(userInput)
