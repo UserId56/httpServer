@@ -1,4 +1,4 @@
-module httpServer
+module github.com/UserId56/httpServer
 
 go 1.24.0
 
