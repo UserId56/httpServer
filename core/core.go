@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -19,7 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config) {
+func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config, handlers map[string]gin.HandlerFunc) {
 	services.RegisterValidators()
 
 	DB, err := database.Connect()
@@ -45,6 +46,20 @@ func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config
 	// Это освободит память (RAM) на стороне Postgres-процессов.
 	sqlDB.SetConnMaxIdleTime(time.Duration(conf.ConnMaxIdleTime) * time.Minute)
 	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		path := c.FullPath()
+		fmt.Printf("!Получен запрос: %s %s\n", c.Request.Method, path)
+		for rulePath, rule := range handlers {
+			// Проверяем, начинается ли текущий путь с rulePath
+			if strings.HasPrefix(path, rulePath) {
+				rule(c)
+			}
+		}
+		c.Next()
+	})
+	for path, handler := range handlers {
+		r.Any(path, handler)
+	}
 	routes.SetupRouter(r, DB)
 	PluginAPI := make(map[string]interface{})
 	pluginCtx, pluginCancel := context.WithCancel(context.Background())
