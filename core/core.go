@@ -18,9 +18,10 @@ import (
 	"github.com/UserId56/httpServer/core/routes"
 	"github.com/UserId56/httpServer/core/services"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config, handlers map[string]gin.HandlerFunc) {
+func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config, handlers map[string]func(db *gorm.DB) gin.HandlerFunc) {
 	services.RegisterValidators()
 
 	DB, err := database.Connect()
@@ -48,18 +49,18 @@ func ServerInit(plugins []plugins.Plugin, wg *sync.WaitGroup, conf models.Config
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		path := c.FullPath()
-		fmt.Printf("!Получен запрос: %s %s\n", c.Request.Method, path)
+		if os.Getenv("DEBUG") == "TRUE" {
+			fmt.Printf("RULES:Получен запрос: %s %s\n", c.Request.Method, path)
+		}
 		for rulePath, rule := range handlers {
 			// Проверяем, начинается ли текущий путь с rulePath
 			if strings.HasPrefix(path, rulePath) {
-				rule(c)
+				functionRules := rule(DB)
+				functionRules(c)
 			}
 		}
 		c.Next()
 	})
-	for path, handler := range handlers {
-		r.Any(path, handler)
-	}
 	routes.SetupRouter(r, DB)
 	PluginAPI := make(map[string]interface{})
 	pluginCtx, pluginCancel := context.WithCancel(context.Background())
