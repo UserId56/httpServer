@@ -2,10 +2,11 @@ package services
 
 import (
 	"fmt"
-	"github.com/UserId56/httpServer/core/models"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/UserId56/httpServer/core/models"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
@@ -18,7 +19,7 @@ func GenerateJWT(user *models.User) (string, error) {
 	if err != nil || minutes <= 0 {
 		minutes = 600
 	}
-	exp := time.Now().Add(time.Duration(minutes) * time.Minute)
+	exp := time.Now().Add(time.Duration(minutes) * time.Second)
 	claims := jwt.MapClaims{
 		"user_id":  user.ID,
 		"role_id":  user.RoleID,
@@ -36,13 +37,19 @@ func GenerateJWT(user *models.User) (string, error) {
 
 func ParseJWT(tokenString string) (*jwt.Token, error) {
 	secretKey := os.Getenv("SERVER_JWT_SECRET_KEY")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrTokenMalformed
-		}
-		return []byte(secretKey), nil
-	},
-		jwt.WithExpirationRequired())
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrTokenMalformed
+			}
+			return []byte(secretKey), nil
+		},
+		jwt.WithExpirationRequired(),
+		jwt.WithValidMethods([]string{"HS256"}),
+	)
 	if err != nil {
 		return nil, err
 	}
