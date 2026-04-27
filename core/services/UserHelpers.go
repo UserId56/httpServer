@@ -14,12 +14,11 @@ import (
 
 func GenerateJWT(user *models.User) (string, error) {
 	configTime := os.Getenv("SERVER_JWT_EXPIRE_TIME")
-
 	minutes, err := strconv.Atoi(configTime)
 	if err != nil || minutes <= 0 {
 		minutes = 600
 	}
-	exp := time.Now().Add(time.Duration(minutes) * time.Second)
+	exp := time.Now().Add(time.Duration(minutes) * time.Minute)
 	claims := jwt.MapClaims{
 		"user_id":  user.ID,
 		"role_id":  user.RoleID,
