@@ -14,7 +14,6 @@ import (
 )
 
 func Auth(db *gorm.DB) gin.HandlerFunc {
-	fmt.Println("Zaletel v Auth middleware")
 	return func(c *gin.Context) {
 		var Authorization string
 		Authorization = c.GetHeader("Authorization")
@@ -50,7 +49,9 @@ func Auth(db *gorm.DB) gin.HandlerFunc {
 				JWT = Authorization // если токен пришёл без "Bearer "
 			}
 			token, err := services.ParseJWT(JWT)
-			fmt.Println("Auth: Ошибка при парсинге JWT:", err)
+			if os.Getenv("DEBUG") == "TRUE" {
+				fmt.Println("Auth: Ошибка при парсинге JWT:", err)
+			}
 			if err != nil || !token.Valid {
 				c.JSON(401, gin.H{"error": "Пользователь не аутентифицирован"})
 				c.Abort()
