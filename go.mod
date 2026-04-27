@@ -6,7 +6,7 @@ toolchain go1.24.10
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/UserId56/httpServer/core v0.0.0-20260410001101-161381c9d590 // indirect
+	github.com/UserId56/httpServer/core v0.0.0-20260427012239-7f00e9c26766 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.14.2 // indirect
 	github.com/bytedance/sonic/loader v0.4.0 // indirect
