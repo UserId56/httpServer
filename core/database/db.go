@@ -218,8 +218,14 @@ func seedDefaultData(db *gorm.DB) error {
 }
 
 func Connect() (*gorm.DB, error) {
+	var host string
+	if os.Getenv("SERVER_BD_HOST") != "" {
+		host = os.Getenv("SERVER_BD_HOST")
+	} else {
+		host = "localhost"
+	}
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable timezone=Europe/Moscow",
-		"localhost",                     // ваш_хост
+		host,                            // ваш_хост
 		os.Getenv("SERVER_BD_USER"),     // имя_пользователя
 		os.Getenv("SERVER_DB_PASSWORD"), // ваш_пароль
 		os.Getenv("SERVER_DB_NAME"),     // имя_базы_данных
